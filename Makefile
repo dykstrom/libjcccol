@@ -36,29 +36,30 @@ VERSION := $(shell cat VERSION 2>/dev/null || echo 0.0.0)
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SOURCES))
 
-# Test files
-TEST_SOURCES := $(wildcard $(TEST_DIR)/*.c)
-TEST_BINARIES := $(patsubst $(TEST_DIR)/%.c,$(BUILD_DIR)/%,$(TEST_SOURCES))
-
 # Compiler flags
 CFLAGS := -Wall -Wextra -Werror -std=c11 -O2 -I$(INCLUDE_DIR)
 LDFLAGS :=
 ARFLAGS := rcs
 
-# Platform-specific adjustments
+# Executable suffix. Empty on POSIX; .exe on Windows (MSYS2/MinGW/Cygwin or
+# native nmake-style OS=Windows_NT). Baked into the test-binary pattern rule
+# below so make matches `build/test_core.exe` against `tests/test_core.c`
+# without auto-appending a second .exe.
+EXE :=
 UNAME_S := $(shell uname -s)
 ifneq (,$(findstring MINGW,$(UNAME_S)))
-    # Windows
-    TEST_BINARIES := $(addsuffix .exe,$(TEST_BINARIES))
+    EXE := .exe
 endif
 ifneq (,$(findstring CYGWIN,$(UNAME_S)))
-    # Windows (Cygwin)
-    TEST_BINARIES := $(addsuffix .exe,$(TEST_BINARIES))
+    EXE := .exe
 endif
 ifeq ($(OS),Windows_NT)
-    # Windows
-    TEST_BINARIES := $(addsuffix .exe,$(TEST_BINARIES))
+    EXE := .exe
 endif
+
+# Test files
+TEST_SOURCES := $(wildcard $(TEST_DIR)/*.c)
+TEST_BINARIES := $(patsubst $(TEST_DIR)/%.c,$(BUILD_DIR)/%$(EXE),$(TEST_SOURCES))
 
 # Phony targets
 .PHONY: all clean test install help dirs release version
@@ -101,7 +102,7 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	$(CC) $(CFLAGS) -c $< -o $@
 
 # Build test executables
-$(BUILD_DIR)/%: $(TEST_DIR)/%.c $(LIB_PATH)
+$(BUILD_DIR)/%$(EXE): $(TEST_DIR)/%.c $(LIB_PATH)
 	@echo "Building test: $@"
 	$(CC) $(CFLAGS) $< -L$(BUILD_DIR) -ljcccol -o $@ $(LDFLAGS)
 

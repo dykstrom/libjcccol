@@ -48,7 +48,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       # Windows-specific: Install MSYS2 with Clang for a consistent toolchain.
       # libjcccol builds a single static library (libjcccol.a) with Clang on all platforms.
@@ -156,7 +156,7 @@ jobs:
           ls -l
 
       - name: Upload artifacts
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: libjcccol-${{ matrix.platform }}
           path: dist/libjcccol-${{ matrix.platform }}.${{ matrix.artifact_ext }}

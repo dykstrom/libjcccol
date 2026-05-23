@@ -6,10 +6,6 @@ dist/
 *.a
 *.d
 
-# Test executables
-tests/test_*
-!tests/test_*.c
-
 # macOS
 .DS_Store
 *.dSYM/
