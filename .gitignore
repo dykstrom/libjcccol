@@ -1,0 +1,41 @@
+# Build artifacts
+obj/
+build/
+dist/
+*.o
+*.a
+*.d
+
+# Test executables
+tests/test_*
+!tests/test_*.c
+
+# macOS
+.DS_Store
+*.dSYM/
+
+# Linux
+*.so
+*.so.*
+
+# Windows
+*.exe
+*.dll
+*.lib
+*.pdb
+
+# Editor/IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.clangd/
+compile_commands.json
+
+# Backup files
+*.bak
+*.orig
+
+# Claude Code local settings
+.claude/
