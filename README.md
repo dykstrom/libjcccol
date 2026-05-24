@@ -132,18 +132,6 @@ clang -o myprogram myprogram.o -L/path/to/libjcccol/build -ljcccol
 - `-std=c11`: C11 standard compliance
 - `-O2`: Optimization level 2
 
-## Installation
-
-To install the library system-wide:
-
-```bash
-make install PREFIX=/usr/local
-```
-
-This installs:
-- `libjcccol.a` to `$PREFIX/lib/`
-- Headers to `$PREFIX/include/jcccol/`
-
 ## License
 
 [License information to be added]

@@ -36,8 +36,10 @@ VERSION := $(shell cat VERSION 2>/dev/null || echo 0.0.0)
 SOURCES := $(wildcard $(SRC_DIR)/*.c)
 OBJECTS := $(patsubst $(SRC_DIR)/%.c,$(OBJ_DIR)/%.o,$(SOURCES))
 
-# Compiler flags
-CFLAGS := -Wall -Wextra -Werror -std=c11 -O2 -I$(INCLUDE_DIR)
+# Compiler flags. -MMD -MP emits .d files alongside each .o as a side-effect
+# of compilation, so dependency tracking stays in lock-step with the build
+# without a separate rule.
+CFLAGS := -Wall -Wextra -Werror -std=c11 -O2 -I$(INCLUDE_DIR) -MMD -MP
 LDFLAGS :=
 ARFLAGS := rcs
 
@@ -57,12 +59,40 @@ ifeq ($(OS),Windows_NT)
     EXE := .exe
 endif
 
-# Test files
+# Test files. Test objects live under obj/tests/ so a hypothetical
+# tests/core.c would not collide with src/core.c at obj/core.o.
+TEST_OBJ_DIR := $(OBJ_DIR)/tests
 TEST_SOURCES := $(wildcard $(TEST_DIR)/*.c)
+TEST_OBJECTS := $(patsubst $(TEST_DIR)/%.c,$(TEST_OBJ_DIR)/%.o,$(TEST_SOURCES))
 TEST_BINARIES := $(patsubst $(TEST_DIR)/%.c,$(BUILD_DIR)/%$(EXE),$(TEST_SOURCES))
 
+# Dist target inputs (override from command line):
+#   PLATFORM=<name>   — used in archive filename and stage directory,
+#                       e.g. macos-arm64, linux-x86_64, windows-x86_64.
+#   ARCHIVE=<format>  — "tar.gz" (default) or "zip".
+DIST_DIR := dist
+# Normalize uname -s to the names the GitHub Actions matrix uses
+# (macos/linux/windows), so a local `make dist` matches the artifact names
+# CI produces.
+DIST_OS := $(shell uname -s | tr A-Z a-z)
+ifeq ($(DIST_OS),darwin)
+    DIST_OS := macos
+endif
+ifneq (,$(findstring mingw,$(DIST_OS)))
+    DIST_OS := windows
+endif
+ifneq (,$(findstring cygwin,$(DIST_OS)))
+    DIST_OS := windows
+endif
+ifeq ($(OS),Windows_NT)
+    DIST_OS := windows
+endif
+PLATFORM ?= $(DIST_OS)-$(shell uname -m)
+ARCHIVE ?= tar.gz
+DIST_STAGE := $(DIST_DIR)/libjcccol-$(PLATFORM)
+
 # Phony targets
-.PHONY: all clean test install help dirs release version
+.PHONY: all clean test help dirs release version dist
 
 # Default target
 all: dirs $(LIB_PATH)
@@ -74,8 +104,8 @@ help:
 	@echo "Available targets:"
 	@echo "  all        - Build the library (default)"
 	@echo "  test       - Build and run all tests"
+	@echo "  dist       - Stage and archive a release bundle (PLATFORM=… ARCHIVE=tar.gz|zip)"
 	@echo "  clean      - Remove all build artifacts"
-	@echo "  install    - Install library to system (requires PREFIX)"
 	@echo "  version    - Print the current library version"
 	@echo "  release    - Cut a release (requires NEW_VERSION=X.Y.Z; macOS/Linux only)"
 	@echo "  help       - Show this help message"
@@ -87,7 +117,7 @@ help:
 
 # Create necessary directories
 dirs:
-	@mkdir -p $(OBJ_DIR) $(BUILD_DIR)
+	@mkdir -p $(OBJ_DIR) $(TEST_OBJ_DIR) $(BUILD_DIR)
 
 # Build the static library
 $(LIB_PATH): $(OBJECTS)
@@ -101,10 +131,18 @@ $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
 	@echo "Compiling: $<"
 	$(CC) $(CFLAGS) -c $< -o $@
 
-# Build test executables
-$(BUILD_DIR)/%$(EXE): $(TEST_DIR)/%.c $(LIB_PATH)
-	@echo "Building test: $@"
-	$(CC) $(CFLAGS) $< -L$(BUILD_DIR) -ljcccol -o $@ $(LDFLAGS)
+# Compile test source files to object files. Kept separate from the link
+# step so a test can grow to multiple translation units (just add the extra
+# .o to the test binary's prerequisites).
+$(TEST_OBJ_DIR)/%.o: $(TEST_DIR)/%.c
+	@echo "Compiling: $<"
+	$(CC) $(CFLAGS) -c $< -o $@
+
+# Link test executables. $(filter %.o,$^) lets additional helper objects
+# join the link without picking up $(LIB_PATH) as an input file.
+$(BUILD_DIR)/%$(EXE): $(TEST_OBJ_DIR)/%.o $(LIB_PATH)
+	@echo "Linking test: $@"
+	$(CC) $(CFLAGS) $(filter %.o,$^) -L$(BUILD_DIR) -ljcccol -o $@ $(LDFLAGS)
 
 # Build and run tests
 test: dirs $(LIB_PATH) $(TEST_BINARIES)
@@ -122,22 +160,32 @@ test: dirs $(LIB_PATH) $(TEST_BINARIES)
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
-	rm -rf $(OBJ_DIR) $(BUILD_DIR)
+	rm -rf $(OBJ_DIR) $(BUILD_DIR) $(DIST_DIR)
 	@echo "Clean complete."
 
-# Install library (requires PREFIX to be set)
-install: $(LIB_PATH)
-ifndef PREFIX
-	@echo "Error: PREFIX not set. Usage: make install PREFIX=/usr/local"
-	@exit 1
+# Stage and archive a release bundle. Used by .github/workflows to package
+# per-platform tarballs/zips, so the layout is defined here (one place)
+# rather than duplicated across workflow YAML.
+#
+# Layout produced under $(DIST_STAGE):
+#   lib/libjcccol.a
+#   include/jcccol.h
+#   include/jcccol/*.h
+#   README.md
+#   LICENSE
+dist: dirs $(LIB_PATH)
+	@echo "Staging dist bundle: $(DIST_STAGE) (ARCHIVE=$(ARCHIVE))"
+	rm -rf $(DIST_STAGE) $(DIST_STAGE).tar.gz $(DIST_STAGE).zip
+	mkdir -p $(DIST_STAGE)/lib $(DIST_STAGE)/include/jcccol
+	cp $(LIB_PATH) $(DIST_STAGE)/lib/
+	cp $(INCLUDE_DIR)/jcccol.h $(DIST_STAGE)/include/
+	cp $(INCLUDE_DIR)/jcccol/*.h $(DIST_STAGE)/include/jcccol/
+	cp README.md LICENSE $(DIST_STAGE)/
+ifeq ($(ARCHIVE),zip)
+	cd $(DIST_DIR) && zip -r libjcccol-$(PLATFORM).zip libjcccol-$(PLATFORM)
+else
+	tar -czf $(DIST_STAGE).tar.gz -C $(DIST_DIR) libjcccol-$(PLATFORM)
 endif
-	@echo "Installing library to $(PREFIX)..."
-	install -d $(PREFIX)/lib
-	install -d $(PREFIX)/include/jcccol
-	install -m 644 $(LIB_PATH) $(PREFIX)/lib/
-	install -m 644 $(INCLUDE_DIR)/jcccol.h $(PREFIX)/include/
-	install -m 644 $(INCLUDE_DIR)/jcccol/core.h $(PREFIX)/include/jcccol/
-	@echo "Installation complete."
 
 # Print the current version (from the VERSION file)
 version:
@@ -160,9 +208,7 @@ release:
 	fi
 	./scripts/release.sh $(NEW_VERSION)
 
-# Dependency tracking
+# Dependency tracking. .d files are produced as a side-effect of compilation
+# via -MMD -MP in CFLAGS, so no dedicated rule is needed.
 -include $(OBJECTS:.o=.d)
-
-$(OBJ_DIR)/%.d: $(SRC_DIR)/%.c
-	@mkdir -p $(OBJ_DIR)
-	@$(CC) $(CFLAGS) -MM -MT $(OBJ_DIR)/$*.o $< -MF $@
+-include $(TEST_OBJECTS:.o=.d)

@@ -40,8 +40,8 @@ make version
 # Does NOT push; review with `git show` and push manually to trigger CI.
 make release NEW_VERSION=0.2.0
 
-# Install to system (requires PREFIX)
-make install PREFIX=/usr/local
+# Stage and archive a release bundle (used by CI; layout defined in Makefile).
+make dist PLATFORM=macos-arm64 ARCHIVE=tar.gz
 ```
 
 **Toolchain overrides:** `CC`, `AR`, and `RANLIB` are overridable from the
@@ -185,6 +185,11 @@ These are flagged by the architecture review at
   needs the version at runtime.
 - **`gettimeofday` is legacy** per POSIX.1-2008 but still works. Migrate to
   `clock_gettime(CLOCK_REALTIME)` the next time `core.c` is touched.
+- **No `V=1` verbose toggle.** The review (§4.2 #5) proposed a kernel-style
+  `Q := @` toggle so commands are silent by default and `V=1` re-enables
+  echoing. We skipped it: the premise was wrong — recipes already echo the
+  full `clang` invocation today (only the status `@echo` lines are
+  suppressed). Revisit if recipe output becomes genuinely noisy.
 
 ### Test Framework
 

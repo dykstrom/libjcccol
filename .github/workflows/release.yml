@@ -138,43 +138,20 @@ jobs:
         if: runner.os != 'Windows'
         run: make test
 
-      - name: Stage distribution (Windows)
+      # Stage + archive via `make dist`. Layout is defined in the Makefile
+      # so it stays in one place.
+      - name: Package dist bundle (Windows)
         if: runner.os == 'Windows'
         shell: msys2 {0}
         run: |
-          STAGE="dist/libjcccol-${{ matrix.platform }}"
-          mkdir -p "$STAGE/lib" "$STAGE/include/jcccol"
-          cp build/libjcccol.a "$STAGE/lib/"
-          cp include/jcccol.h "$STAGE/include/"
-          cp include/jcccol/core.h "$STAGE/include/jcccol/"
-          cp README.md LICENSE "$STAGE/"
-          ls -lR "$STAGE"
+          make dist PLATFORM=${{ matrix.platform }} ARCHIVE=${{ matrix.artifact_ext }}
+          ls -lR dist
 
-      - name: Stage distribution (Non-Windows)
+      - name: Package dist bundle (Non-Windows)
         if: runner.os != 'Windows'
         run: |
-          STAGE="dist/libjcccol-${{ matrix.platform }}"
-          mkdir -p "$STAGE/lib" "$STAGE/include/jcccol"
-          cp build/libjcccol.a "$STAGE/lib/"
-          cp include/jcccol.h "$STAGE/include/"
-          cp include/jcccol/core.h "$STAGE/include/jcccol/"
-          cp README.md LICENSE "$STAGE/"
-          ls -lR "$STAGE"
-
-      - name: Package archive (Windows)
-        if: runner.os == 'Windows'
-        shell: msys2 {0}
-        run: |
-          cd dist
-          zip -r "libjcccol-${{ matrix.platform }}.zip" "libjcccol-${{ matrix.platform }}"
-          ls -l
-
-      - name: Package archive (Non-Windows)
-        if: runner.os != 'Windows'
-        run: |
-          cd dist
-          tar -czf "libjcccol-${{ matrix.platform }}.tar.gz" "libjcccol-${{ matrix.platform }}"
-          ls -l
+          make dist PLATFORM=${{ matrix.platform }} ARCHIVE=${{ matrix.artifact_ext }}
+          ls -lR dist
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v7
