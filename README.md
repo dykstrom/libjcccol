@@ -1,5 +1,12 @@
 # libjcccol - COL Standard Library
 
+[![build](https://github.com/dykstrom/libjcccol/actions/workflows/build.yml/badge.svg)](https://github.com/dykstrom/libjcccol/actions/workflows/build.yml)
+[![Latest Release](https://img.shields.io/github/v/release/dykstrom/libjcccol?display_name=release)](https://github.com/dykstrom/libjcccol/releases)
+![Downloads](https://img.shields.io/github/downloads/dykstrom/libjcccol/total)
+[![Open Issues](https://img.shields.io/github/issues/dykstrom/libjcccol)](https://github.com/dykstrom/libjcccol/issues)
+![License](https://img.shields.io/github/license/dykstrom/libjcccol)
+![Top Language](https://img.shields.io/github/languages/top/dykstrom/libjcccol)
+
 The standard library for the COL programming language, designed for use
 with the [JCC compiler](https://github.com/dykstrom/jcc).
 

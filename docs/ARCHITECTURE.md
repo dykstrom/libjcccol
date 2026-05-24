@@ -8,9 +8,9 @@ duplicating its content.
 ## Overview
 
 `libjcccol` is the standard library for the COL programming language,
-designed for use with the [JCC compiler](https://github.com/dykstrom/jcc)
-(local checkout at `~/Workspace/jcc`). It follows the same pattern as the
-BASIC standard library at `~/Workspace/libjccbas`.
+designed for use with the [JCC compiler](https://github.com/dykstrom/jcc).
+It follows the same pattern as the BASIC standard library
+[`libjccbas`](https://github.com/dykstrom/libjccbas).
 
 The library is:
 
