@@ -2,6 +2,12 @@
  * core.c - Implementation of core COL Standard Library functions
  */
 
+/* Request POSIX.1-2008 visibility from glibc so clock_gettime() and
+ * CLOCK_REALTIME are declared in <time.h> under -std=c11. macOS does not
+ * need this (its headers are permissive), but it is harmless there and on
+ * MinGW. Must be defined before any system header is included. */
+#define _POSIX_C_SOURCE 200809L
+
 #include "jcccol/core.h"
 
 #ifdef _WIN32

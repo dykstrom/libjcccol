@@ -1,16 +1,20 @@
 # libjcccol - COL Standard Library
 
-The standard library for the COL programming language, designed for use with the JCC compiler.
+The standard library for the COL programming language, designed for use
+with the [JCC compiler](https://github.com/dykstrom/jcc).
 
-## Overview
+`libjcccol` provides core runtime functionality for COL programs compiled
+with JCC. It is implemented in portable C (C11) and built as a static
+library (`libjcccol.a`) that can be linked with COL programs.
 
-`libjcccol` provides core runtime functionality for COL programs compiled with JCC. It is implemented in portable C and built as a static library (`libjcccol.a`) that can be linked with COL programs.
+For repo layout, build-system design, release process, and JCC
+integration details, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 ## Platform Support
 
-- **macOS**
-- **Linux**
-- **Windows**
+- **macOS** (arm64, x86_64)
+- **Linux** (x86_64, arm64)
+- **Windows** (x86_64, via MSYS2/MinGW)
 
 ## Building
 
@@ -18,12 +22,12 @@ The standard library for the COL programming language, designed for use with the
 
 - LLVM toolchain (Clang)
 - Make
-- AR and ranlib (standard archive tools)
+- `ar` and `ranlib` (standard archive tools)
 
-### Build Commands
+### Commands
 
 ```bash
-# Build the library
+# Build the library (produces build/libjcccol.a)
 make
 
 # Build and run tests
@@ -36,44 +40,18 @@ make clean
 make help
 ```
 
-The build produces `build/libjcccol.a` which can be linked with COL programs.
-
-### Platform-Specific Notes
-
-- **macOS**: Uses Clang
-- **Linux**: Uses Clang
-- **Windows**: Uses Clang; produces `.exe` test binaries
-
-## Project Structure
-
-```
-libjcccol/
-├── include/        # Public header files
-│   ├── jcccol.h    # Main library header
-│   └── jcccol/
-│       └── core.h  # Core functionality
-├── src/            # Implementation files
-│   └── core.c      # Core functions
-├── tests/          # Test files
-│   └── test_core.c # Core function tests
-├── build/          # Build artifacts (generated)
-│   └── libjcccol.a # Output library
-├── obj/            # Object files (generated)
-├── Makefile        # Build configuration
-└── README.md       # This file
-```
-
 ## Library Functions
 
 ### Core Functions
 
 #### `millis()`
 
-Returns the number of milliseconds since the Unix epoch (January 1, 1970 00:00:00 UTC).
+Returns the number of milliseconds since the Unix epoch (January 1, 1970
+00:00:00 UTC).
 
 **Header:** `jcccol/core.h`
 **Signature:** `int64_t millis(void)`
-**Returns:** Milliseconds since epoch as a 64-bit signed integer
+**Returns:** Milliseconds since epoch as a 64-bit signed integer.
 
 **Example:**
 ```c
@@ -89,53 +67,25 @@ int main(void) {
 
 ## Testing
 
-The test suite uses a simple custom test framework and provides comprehensive coverage of library functions.
+The test suite uses a small custom framework. Each test binary returns 0
+on success and prints detailed pass/fail information.
 
 ```bash
-# Run all tests
 make test
 ```
 
-Each test executable:
-- Returns 0 on success, non-zero on failure
-- Prints detailed pass/fail information
-- Tests edge cases and cross-platform behavior
-
 ## Integration with JCC
 
-This library is designed to be linked with COL programs compiled by the JCC compiler.
+This library is designed to be linked with COL programs compiled by the
+JCC compiler. A typical link line:
 
-To link against this library:
 ```bash
 clang -o myprogram myprogram.o -L/path/to/libjcccol/build -ljcccol
 ```
 
-## Development
-
-### Adding New Functions
-
-1. Add function declaration to appropriate header in `include/jcccol/`
-2. Implement function in corresponding source file in `src/`
-3. Create tests in `tests/`
-4. Run `make test` to verify
-
-### Code Style
-
-- C11 standard
-- Snake_case for public functions (no prefix required)
-- Comprehensive documentation in header files
-- Cross-platform implementations using conditional compilation
-
-### Compiler Flags
-
-- `-Wall -Wextra -Werror`: All warnings enabled and treated as errors
-- `-std=c11`: C11 standard compliance
-- `-O2`: Optimization level 2
+See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#relationship-to-jcc)
+for the full integration picture.
 
 ## License
 
-[License information to be added]
-
-## Contributing
-
-[Contribution guidelines to be added]
+GPL-3.0. See [`LICENSE`](LICENSE).
