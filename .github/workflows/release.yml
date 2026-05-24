@@ -50,7 +50,6 @@ jobs:
             os: windows-latest
             arch: x86_64
             artifact_ext: zip
-            shell: msys2 {0}
             msys2_system: MINGW64
             msys2_clang_pkg: mingw-w64-x86_64-clang
             msys2_llvm_pkg: mingw-w64-x86_64-llvm
@@ -61,7 +60,6 @@ jobs:
             os: windows-11-arm
             arch: arm64
             artifact_ext: zip
-            shell: msys2 {0}
             msys2_system: CLANGARM64
             msys2_clang_pkg: mingw-w64-clang-aarch64-clang
             msys2_llvm_pkg: mingw-w64-clang-aarch64-llvm
@@ -72,28 +70,24 @@ jobs:
             os: macos-latest
             arch: arm64
             artifact_ext: tar.gz
-            shell: bash
 
           # macOS x86_64 (Intel)
           - platform: macos-x86_64
             os: macos-15-intel
             arch: x86_64
             artifact_ext: tar.gz
-            shell: bash
 
           # Linux x86_64
           - platform: linux-x86_64
             os: ubuntu-latest
             arch: x86_64
             artifact_ext: tar.gz
-            shell: bash
 
           # Linux ARM64
           - platform: linux-arm64
             os: ubuntu-24.04-arm
             arch: arm64
             artifact_ext: tar.gz
-            shell: bash
 
     steps:
       - name: Checkout code
@@ -125,25 +119,53 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y clang llvm
 
-      - name: Verify toolchain
-        shell: ${{ matrix.shell }}
+      # The Windows/non-Windows pairs below differ only in `shell:`. GHA
+      # parses `shell:` before matrix substitution, so it can't be driven
+      # from a matrix field — hence the explicit duplication.
+      - name: Verify toolchain (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
         run: |
           uname -a || true
           make --version || true
           clang --version || true
 
-      - name: Build library
-        shell: ${{ matrix.shell }}
+      - name: Verify toolchain (Non-Windows)
+        if: runner.os != 'Windows'
+        run: |
+          uname -a || true
+          make --version || true
+          clang --version || true
+
+      - name: Build library (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
         run: make clean && make
 
-      - name: Run tests
-        shell: ${{ matrix.shell }}
+      - name: Build library (Non-Windows)
+        if: runner.os != 'Windows'
+        run: make clean && make
+
+      - name: Run tests (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: make test
+
+      - name: Run tests (Non-Windows)
+        if: runner.os != 'Windows'
         run: make test
 
       # Stage + archive via `make dist`. Layout is defined in the Makefile
       # so it stays in one place.
-      - name: Package dist bundle
-        shell: ${{ matrix.shell }}
+      - name: Package dist bundle (Windows)
+        if: runner.os == 'Windows'
+        shell: msys2 {0}
+        run: |
+          make dist PLATFORM=${{ matrix.platform }} ARCHIVE=${{ matrix.artifact_ext }}
+          ls -lR dist
+
+      - name: Package dist bundle (Non-Windows)
+        if: runner.os != 'Windows'
         run: |
           make dist PLATFORM=${{ matrix.platform }} ARCHIVE=${{ matrix.artifact_ext }}
           ls -lR dist
