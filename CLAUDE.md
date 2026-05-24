@@ -48,10 +48,9 @@ make build/test_core
 ```
 
 ### Development Workflow
-1. Make changes to source files in `src/` or headers in `include/jcccol/`.
-2. Run `make clean && make` to rebuild.
-3. Run `make test` to verify changes.
-4. All compiler warnings are treated as errors (`-Werror`).
+
+Edit files in `src/` or `include/jcccol/`, then `make clean && make test`.
+All compiler warnings are errors (`-Werror`).
 
 ## Development Guidelines
 

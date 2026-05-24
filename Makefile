@@ -25,8 +25,7 @@ BUILD_DIR := build
 TEST_DIR := tests
 
 # Output
-LIB_NAME := libjcccol.a
-LIB_PATH := $(BUILD_DIR)/$(LIB_NAME)
+LIB_PATH := $(BUILD_DIR)/libjcccol.a
 
 # Version (single source of truth: the VERSION file at the repo root).
 # Bumped by scripts/release.sh as part of `make release`.
@@ -43,16 +42,13 @@ CFLAGS := -Wall -Wextra -Werror -std=c11 -O2 -I$(INCLUDE_DIR) -MMD -MP
 LDFLAGS :=
 ARFLAGS := rcs
 
-# Executable suffix. Empty on POSIX; .exe on Windows (MSYS2/MinGW/Cygwin or
-# native nmake-style OS=Windows_NT). Baked into the test-binary pattern rule
-# below so make matches `build/test_core.exe` against `tests/test_core.c`
-# without auto-appending a second .exe.
+# Executable suffix. Empty on POSIX; .exe on Windows (MSYS2/MinGW or native
+# OS=Windows_NT). Baked into the test-binary pattern rule below so make
+# matches `build/test_core.exe` against `tests/test_core.c` without
+# auto-appending a second .exe.
 EXE :=
 UNAME_S := $(shell uname -s)
 ifneq (,$(findstring MINGW,$(UNAME_S)))
-    EXE := .exe
-endif
-ifneq (,$(findstring CYGWIN,$(UNAME_S)))
     EXE := .exe
 endif
 ifeq ($(OS),Windows_NT)
@@ -79,9 +75,6 @@ ifeq ($(DIST_OS),darwin)
     DIST_OS := macos
 endif
 ifneq (,$(findstring mingw,$(DIST_OS)))
-    DIST_OS := windows
-endif
-ifneq (,$(findstring cygwin,$(DIST_OS)))
     DIST_OS := windows
 endif
 ifeq ($(OS),Windows_NT)
@@ -112,11 +105,6 @@ help:
 	@echo "  version    - Print the current library version"
 	@echo "  release    - Cut a release (requires NEW_VERSION=X.Y.Z; macOS/Linux only)"
 	@echo "  help       - Show this help message"
-	@echo ""
-	@echo "Example usage:"
-	@echo "  make              # Build the library"
-	@echo "  make test         # Run tests"
-	@echo "  make clean        # Clean build artifacts"
 
 # Create necessary directories
 dirs:
@@ -127,7 +115,6 @@ $(LIB_PATH): $(OBJECTS)
 	@echo "Creating static library: $@"
 	$(AR) $(ARFLAGS) $@ $^
 	$(RANLIB) $@
-	@echo "Library created successfully: $@"
 
 # Compile source files to object files
 $(OBJ_DIR)/%.o: $(SRC_DIR)/%.c
@@ -162,9 +149,7 @@ test: dirs $(LIB_PATH) $(TEST_BINARIES)
 
 # Clean build artifacts
 clean:
-	@echo "Cleaning build artifacts..."
 	rm -rf $(OBJ_DIR) $(BUILD_DIR) $(DIST_DIR)
-	@echo "Clean complete."
 
 # Stage and archive a release bundle. Used by .github/workflows to package
 # per-platform tarballs/zips, so the layout is defined here (one place)

@@ -121,12 +121,9 @@ archive names that match the CI matrix.
 
 ## Test Framework
 
-A small custom framework defined in `tests/test_framework.h`:
-
-- `TEST(name)` defines a test.
-- `RUN_TEST(name)` executes it and reports the result.
-- `ASSERT(condition)` and `ASSERT_MSG(condition, msg)` for assertions.
-- Each test binary returns 0 on success, non-zero on failure.
+A small custom framework in [`tests/test_framework.h`](../tests/test_framework.h):
+`TEST`/`RUN_TEST`/`ASSERT`/`ASSERT_MSG` macros plus a `test_sleep_ms`
+helper. Test binaries return 0 on success.
 
 ## Release Process
 
@@ -143,27 +140,16 @@ the release script — do not edit it by hand outside of a release.
 
 ### Standard Flow (macOS / Linux)
 
+From a clean tree on `master`/`main`:
+
 ```bash
-# 1. From a clean tree on master/main:
-make release NEW_VERSION=0.2.0
-# The script:
-#   - validates clean tree, branch, and that v0.2.0 doesn't already exist
-#     locally or on origin
-#   - runs `make clean && make test`
-#   - writes 0.2.0 to VERSION
-#   - creates a commit "Release v0.2.0" and an annotated tag v0.2.0
-#   - prints the push command; does NOT push automatically
-
-# 2. Review:
-git show HEAD
-git tag -n1 v0.2.0
-
-# 3. Publish (this is what triggers the CI release):
-git push --follow-tags origin master
-
-# 4. (If something is wrong before pushing, abort with:)
-git tag -d v0.2.0 && git reset --hard HEAD~1
+make release NEW_VERSION=0.2.0   # validates, tests, bumps VERSION, commits, tags — does NOT push
+git show HEAD && git tag -n1 v0.2.0   # review
+git push --follow-tags origin master  # publish (triggers CI release)
 ```
+
+To abort before pushing: `git tag -d v0.2.0 && git reset --hard HEAD~1`.
+See [`scripts/release.sh`](../scripts/release.sh) for the exact checks.
 
 ### Windows
 
