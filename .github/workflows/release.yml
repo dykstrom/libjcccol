@@ -45,11 +45,25 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Windows x86_64
+          # Windows x86_64 — MSYS2 MINGW64 environment
           - platform: windows-x86_64
             os: windows-latest
             arch: x86_64
             artifact_ext: zip
+            msys2_system: MINGW64
+            msys2_clang_pkg: mingw-w64-x86_64-clang
+            msys2_llvm_pkg: mingw-w64-x86_64-llvm
+            msys2_bin: C:/msys64/mingw64/bin
+
+          # Windows ARM64 — MSYS2 CLANGARM64 environment
+          - platform: windows-arm64
+            os: windows-11-arm
+            arch: arm64
+            artifact_ext: zip
+            msys2_system: CLANGARM64
+            msys2_clang_pkg: mingw-w64-clang-aarch64-clang
+            msys2_llvm_pkg: mingw-w64-clang-aarch64-llvm
+            msys2_bin: C:/msys64/clangarm64/bin
 
           # macOS ARM64 (Apple Silicon)
           - platform: macos-arm64
@@ -83,11 +97,11 @@ jobs:
         if: runner.os == 'Windows'
         uses: msys2/setup-msys2@v2
         with:
-          msystem: MINGW64
+          msystem: ${{ matrix.msys2_system }}
           update: true
           install: >-
-            mingw-w64-x86_64-clang
-            mingw-w64-x86_64-llvm
+            ${{ matrix.msys2_clang_pkg }}
+            ${{ matrix.msys2_llvm_pkg }}
             make
             tar
             zip
@@ -96,7 +110,7 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          echo "C:/msys64/mingw64/bin" >> $GITHUB_PATH
+          echo "${{ matrix.msys2_bin }}" >> $GITHUB_PATH
           echo "C:/msys64/usr/bin" >> $GITHUB_PATH
 
       - name: Install Clang (Linux)
@@ -157,7 +171,9 @@ jobs:
         uses: actions/upload-artifact@v7
         with:
           name: libjcccol-${{ matrix.platform }}
-          path: dist/libjcccol-${{ matrix.platform }}.${{ matrix.artifact_ext }}
+          # Version segment of the filename comes from VERSION via make dist;
+          # wildcard avoids duplicating it across workflow and Makefile.
+          path: dist/libjcccol-*-${{ matrix.platform }}.${{ matrix.artifact_ext }}
           if-no-files-found: error
           retention-days: 90  # Keep release artifacts longer than build artifacts
 
@@ -206,6 +222,7 @@ jobs:
           This release includes a static library (`libjcccol.a`) for the following platforms:
 
           - **Windows x86_64** (Clang, MSYS2/MinGW64)
+          - **Windows ARM64** (Clang, MSYS2/CLANGARM64)
           - **macOS ARM64** (Apple Silicon)
           - **macOS x86_64** (Intel)
           - **Linux x86_64**
@@ -242,6 +259,7 @@ jobs:
           prerelease: false
           files: |
             artifacts/libjcccol-windows-x86_64/*.zip
+            artifacts/libjcccol-windows-arm64/*.zip
             artifacts/libjcccol-macos-arm64/*.tar.gz
             artifacts/libjcccol-macos-x86_64/*.tar.gz
             artifacts/libjcccol-linux-x86_64/*.tar.gz
@@ -254,6 +272,6 @@ jobs:
           echo "### Release ${{ steps.version.outputs.version }} created successfully :rocket:" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "**Tag:** ${{ steps.version.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Platforms:** Windows x86_64, macOS ARM64, macOS x86_64, Linux x86_64, Linux ARM64" >> "$GITHUB_STEP_SUMMARY"
+          echo "**Platforms:** Windows x86_64, Windows ARM64, macOS ARM64, macOS x86_64, Linux x86_64, Linux ARM64" >> "$GITHUB_STEP_SUMMARY"
           echo "" >> "$GITHUB_STEP_SUMMARY"
           echo "View release at: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"

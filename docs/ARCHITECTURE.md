@@ -132,9 +132,10 @@ A small custom framework defined in `tests/test_framework.h`:
 
 Releases are cut by tagging a commit on `master` or `main`.
 `.github/workflows/release.yml` triggers on `v*` tags, builds the
-5-platform matrix (Windows x86_64, macOS arm64, macOS x86_64, Linux
-x86_64, Linux arm64), runs tests, calls `make dist`, and uploads the
-archives to a GitHub Release. No `gh` CLI is required locally.
+6-platform matrix (Windows x86_64, Windows arm64, macOS arm64, macOS
+x86_64, Linux x86_64, Linux arm64), runs tests, calls `make dist`, and
+uploads archives named `libjcccol-${version}-${classifier}.${type}` to a
+GitHub Release. No `gh` CLI is required locally.
 
 **Single source of truth for the version:** the `VERSION` file at the
 repo root. The Makefile reads it via `$(shell cat VERSION)`. Bump it via
@@ -178,18 +179,93 @@ git push --follow-tags
 
 ## Relationship to JCC
 
-This library is linked with COL programs compiled by the JCC compiler.
-JCC will:
+`libjcccol` is consumed by [JCC](https://github.com/dykstrom/jcc) — a
+Maven-built Java/Kotlin project — via per-platform release archives
+published to GitHub Releases on tags. The integration is the same one
+JCC uses for [`libjccbas`](https://github.com/dykstrom/libjccbas) and is
+wired in JCC's `jcc-compiler/pom.xml`. The current reference is on the
+[`llvm-basic`](https://github.com/dykstrom/jcc/blob/llvm-basic/jcc-compiler/pom.xml)
+branch.
 
-- Include headers from `include/`.
-- Link against `build/libjcccol.a` (or the equivalent file from a release
-  bundle).
-- Use library functions as runtime support for COL language features.
+### Integration mechanics
 
-A typical link line:
+1. **Tag pushed to `master`/`main` here** triggers
+   `.github/workflows/release.yml`, which builds the matrix and publishes
+   a GitHub Release with one archive per platform.
+2. **JCC's `jcc-compiler` module** pins a `libjcccol` version. At Maven
+   build time, OS/arch detection activates a per-platform profile that
+   sets `native.classifier` and `native.archive.type`.
+3. **JCC's Maven build** first looks in the local Maven repo at
+   `~/.m2/repository/se/dykstrom/jcc/libjcccol/${version}/libjcccol-${version}-${classifier}.${type}`.
+   If absent, it downloads from
+   `https://github.com/dykstrom/libjcccol/releases/download/v${version}/libjcccol-${version}-${classifier}.${type}`
+   and installs the archive into the local Maven repo via
+   `mvn install:install-file`.
+4. **`maven-dependency-plugin:unpack`** extracts the archive into JCC's
+   `target/temp-extract/`. An antrun step then flattens out the
+   `libjcccol.*` files into `target/`.
+5. **`maven-resources-plugin`** copies `libjcccol.a` (and any Windows
+   `libjcccol.dll` variants, should they exist later) into JCC's `bin/`
+   directory, so the library ships alongside the JCC distribution.
+
+### Archive naming and platforms
+
+JCC expects archives named `libjcccol-${version}-${classifier}.${type}`,
+where `${version}` matches the git tag (without the leading `v`) and
+`${classifier}` is one of:
+
+| OS family | Architecture | Classifier        | Archive type |
+| --- | --- | --- | --- |
+| Windows | x86_64 | `windows-x86_64` | `zip` |
+| Windows | arm64  | `windows-arm64`  | `zip` |
+| macOS   | x86_64 | `macos-x86_64`   | `tar.gz` |
+| macOS   | arm64  | `macos-arm64`    | `tar.gz` |
+| Linux   | x86_64 | `linux-x86_64`   | `tar.gz` |
+| Linux   | arm64  | `linux-arm64`    | `tar.gz` |
+
+Both `make dist` and the release workflow produce filenames in this
+format. `VERSION` is the single source of truth and is read by the
+Makefile.
+
+### What's in the archive (and what JCC actually uses)
+
+Each archive contains:
+
+```
+libjcccol-<version>-<classifier>/
+├── lib/libjcccol.a   ← the only file JCC consumes
+├── include/jcccol.h
+├── include/jcccol/*.h
+├── README.md
+└── LICENSE
+```
+
+JCC's antrun step uses `<copy flatten="true">` with `**/libjcccol.*`, so
+the layout inside the archive is flexible — only the presence of
+`libjcccol.a` (anywhere) matters. JCC does **not** consume the headers:
+its COL compile path emits LLVM IR that calls libjcccol symbols by name,
+and the linker resolves them from `libjcccol.a` at COL link time. The
+headers are bundled for human/C consumers and for documenting the API.
+
+Implications for compatibility:
+
+- **Renaming or removing an exported symbol breaks JCC.** Treat
+  exported-symbol changes as ABI changes.
+- **Adding new exported symbols is safe** — JCC ignores anything it
+  doesn't reference.
+- **Header-only changes are invisible to JCC** (since JCC doesn't compile
+  against them). They still matter for any human/C consumer.
+
+### Linking against the static library directly
+
+For C consumers who do use the headers (test programs, hand-written C
+that calls libjcccol), the in-tree static library at
+`build/libjcccol.a` is the same artifact that ends up in the release
+archive. A typical link line:
 
 ```bash
-clang -o myprogram myprogram.o -L/path/to/libjcccol/build -ljcccol
+clang -o myprogram myprogram.c -I/path/to/libjcccol/include \
+      -L/path/to/libjcccol/build -ljcccol
 ```
 
 ## Open Design Decisions

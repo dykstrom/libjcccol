@@ -89,7 +89,10 @@ ifeq ($(OS),Windows_NT)
 endif
 PLATFORM ?= $(DIST_OS)-$(shell uname -m)
 ARCHIVE ?= tar.gz
-DIST_STAGE := $(DIST_DIR)/libjcccol-$(PLATFORM)
+# Archives are named libjcccol-<version>-<platform>.<ext> to match the
+# convention JCC's Maven build expects (see docs/ARCHITECTURE.md).
+DIST_NAME := libjcccol-$(VERSION)-$(PLATFORM)
+DIST_STAGE := $(DIST_DIR)/$(DIST_NAME)
 
 # Phony targets
 .PHONY: all clean test help dirs release version dist
@@ -182,9 +185,9 @@ dist: dirs $(LIB_PATH)
 	cp $(INCLUDE_DIR)/jcccol/*.h $(DIST_STAGE)/include/jcccol/
 	cp README.md LICENSE $(DIST_STAGE)/
 ifeq ($(ARCHIVE),zip)
-	cd $(DIST_DIR) && zip -r libjcccol-$(PLATFORM).zip libjcccol-$(PLATFORM)
+	cd $(DIST_DIR) && zip -r $(DIST_NAME).zip $(DIST_NAME)
 else
-	tar -czf $(DIST_STAGE).tar.gz -C $(DIST_DIR) libjcccol-$(PLATFORM)
+	tar -czf $(DIST_STAGE).tar.gz -C $(DIST_DIR) $(DIST_NAME)
 endif
 
 # Print the current version (from the VERSION file)

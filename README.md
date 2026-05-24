@@ -83,15 +83,25 @@ make test
 
 ## Integration with JCC
 
-This library is designed to be linked with COL programs compiled by the
-JCC compiler. A typical link line:
-
-```bash
-clang -o myprogram myprogram.o -L/path/to/libjcccol/build -ljcccol
-```
+The JCC compiler — a Maven-built Java/Kotlin project — consumes
+`libjcccol` automatically. At JCC's build time, Maven detects the OS and
+architecture, downloads the matching archive from this repo's
+[Releases](https://github.com/dykstrom/libjcccol/releases) page
+(`libjcccol-${version}-${classifier}.${type}`), extracts `libjcccol.a`,
+and bundles it under JCC's `bin/`. JCC emits LLVM IR for COL programs
+that references libjcccol symbols by name; the linker resolves them from
+`libjcccol.a` at COL link time.
 
 See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#relationship-to-jcc)
-for the full integration picture.
+for the full integration picture, including the classifier/archive-type
+table and what JCC actually consumes from the archive.
+
+For C consumers using the headers directly, a typical link line:
+
+```bash
+clang -o myprogram myprogram.c -I/path/to/libjcccol/include \
+      -L/path/to/libjcccol/build -ljcccol
+```
 
 ## License
 
