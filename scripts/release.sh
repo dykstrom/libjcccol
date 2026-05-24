@@ -67,14 +67,26 @@ echo "==> Running full build + tests"
 make clean
 make test
 
-# Bump VERSION file
-echo "==> Writing VERSION=$VERSION"
-echo "$VERSION" > VERSION
+# Bump VERSION file (or skip if already at the target). The no-change
+# case covers the very first release (VERSION shipped at 0.1.0 from the
+# start) and any workflow where VERSION was hand-edited and committed
+# beforehand. Without this check, `git commit` would fail on an empty
+# diff and set -e would abort the whole release.
+CURRENT_VERSION="$(cat VERSION 2>/dev/null || true)"
+COMMITTED=0
+if [ "$CURRENT_VERSION" = "$VERSION" ]; then
+    echo "==> VERSION already $VERSION — skipping bump commit"
+else
+    echo "==> Writing VERSION=$VERSION"
+    echo "$VERSION" > VERSION
+    echo "==> Committing release bump"
+    git add VERSION
+    git commit -m "Release $TAG"
+    COMMITTED=1
+fi
 
-# Commit and tag (annotated tag so it shows in `git describe` and carries a message)
-echo "==> Committing and tagging $TAG"
-git add VERSION
-git commit -m "Release $TAG"
+# Annotated tag so it shows in `git describe` and carries a message.
+echo "==> Creating annotated tag $TAG"
 git tag -a "$TAG" -m "Release $TAG"
 
 echo
@@ -87,4 +99,6 @@ echo "    git push --follow-tags origin $BRANCH"
 echo
 echo "To abort:"
 echo "    git tag -d $TAG"
-echo "    git reset --hard HEAD~1"
+if [ "$COMMITTED" = "1" ]; then
+    echo "    git reset --hard HEAD~1"
+fi
