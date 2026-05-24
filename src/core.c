@@ -7,7 +7,6 @@
 #ifdef _WIN32
     #include <windows.h>
 #else
-    #include <sys/time.h>
     #include <time.h>
 #endif
 
@@ -28,10 +27,11 @@ int64_t millis(void) {
     /* Difference is 11644473600 seconds */
     return (int64_t)((uli.QuadPart / 10000ULL) - 11644473600000ULL);
 #else
-    /* POSIX implementation using gettimeofday */
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
+    /* POSIX implementation using clock_gettime(CLOCK_REALTIME).
+     * Preferred over gettimeofday, which POSIX.1-2008 marks legacy. */
+    struct timespec ts;
+    clock_gettime(CLOCK_REALTIME, &ts);
 
-    return (int64_t)(tv.tv_sec) * 1000 + (int64_t)(tv.tv_usec) / 1000;
+    return (int64_t)(ts.tv_sec) * 1000 + (int64_t)(ts.tv_nsec) / 1000000;
 #endif
 }

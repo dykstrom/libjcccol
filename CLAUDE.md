@@ -183,8 +183,6 @@ These are flagged by the architecture review at
   reads it, but it is not yet passed as `-DJCCCOL_VERSION_STRING=...` and
   no C-level accessor exists. Add both together when the first consumer
   needs the version at runtime.
-- **`gettimeofday` is legacy** per POSIX.1-2008 but still works. Migrate to
-  `clock_gettime(CLOCK_REALTIME)` the next time `core.c` is touched.
 - **No `V=1` verbose toggle.** The review (§4.2 #5) proposed a kernel-style
   `Q := @` toggle so commands are silent by default and `V=1` re-enables
   echoing. We skipped it: the premise was wrong — recipes already echo the
