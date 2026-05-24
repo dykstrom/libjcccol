@@ -2,6 +2,11 @@
  * test_core.c - Tests for core COL Standard Library functions
  */
 
+/* Request POSIX.1-2008 visibility so nanosleep() (used via the
+ * test_sleep_ms helper in test_framework.h) is declared in <time.h>
+ * under -std=c11 on glibc. Must precede every system header include. */
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdlib.h>
 #include <stdint.h>
 #include "jcccol.h"

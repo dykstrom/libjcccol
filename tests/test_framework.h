@@ -7,10 +7,11 @@
 #ifndef TEST_FRAMEWORK_H
 #define TEST_FRAMEWORK_H
 
-/* Request POSIX.1-2008 visibility so nanosleep() is declared in <time.h>
- * under -std=c11 on glibc. Same rationale as src/core.c. Must be defined
- * before any system header is included. */
-#define _POSIX_C_SOURCE 200809L
+/* NOTE: tests using test_sleep_ms() must define _POSIX_C_SOURCE 200809L
+ * at the top of the .c file (before any system header is included) so
+ * glibc declares nanosleep() under -std=c11. Defining it here in the
+ * header is too late if the caller has already included <stdlib.h> etc.
+ * See tests/test_core.c for the pattern. */
 
 #include <stdio.h>
 #include <stdint.h>
