@@ -83,8 +83,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          echo "${{ matrix.msys2_bin }}" >> $GITHUB_PATH
-          echo "C:/msys64/usr/bin" >> $GITHUB_PATH
+          echo "${{ matrix.msys2_bin }}" >> "$GITHUB_PATH"
+          echo "C:/msys64/usr/bin" >> "$GITHUB_PATH"
 
       # Linux-specific: Install Clang
       - name: Install Clang (Linux)

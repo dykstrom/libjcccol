@@ -88,7 +88,7 @@ DIST_NAME := libjcccol-$(VERSION)-$(PLATFORM)
 DIST_STAGE := $(DIST_DIR)/$(DIST_NAME)
 
 # Phony targets
-.PHONY: all clean test help dirs release version dist
+.PHONY: all clean test help dirs release version dist lint
 
 # Default target
 all: dirs $(LIB_PATH)
@@ -100,6 +100,7 @@ help:
 	@echo "Available targets:"
 	@echo "  all        - Build the library (default)"
 	@echo "  test       - Build and run all tests"
+	@echo "  lint       - Lint workflows (actionlint) and scripts (shellcheck) if installed"
 	@echo "  dist       - Stage and archive a release bundle (PLATFORM=… ARCHIVE=tar.gz|zip)"
 	@echo "  clean      - Remove all build artifacts"
 	@echo "  version    - Print the current library version"
@@ -161,7 +162,7 @@ clean:
 #   include/jcccol/*.h
 #   README.md
 #   LICENSE
-dist: dirs $(LIB_PATH)
+dist: dirs lint $(LIB_PATH)
 	@echo "Staging dist bundle: $(DIST_STAGE) (ARCHIVE=$(ARCHIVE))"
 	rm -rf $(DIST_STAGE) $(DIST_STAGE).tar.gz $(DIST_STAGE).zip
 	mkdir -p $(DIST_STAGE)/lib $(DIST_STAGE)/include/jcccol
@@ -174,6 +175,25 @@ ifeq ($(ARCHIVE),zip)
 else
 	tar -czf $(DIST_STAGE).tar.gz -C $(DIST_DIR) $(DIST_NAME)
 endif
+
+# Optional lint pass. actionlint covers .github/workflows/ (and transitively
+# runs shellcheck on workflow `run:` blocks if shellcheck is on PATH).
+# shellcheck handles standalone scripts under scripts/. Both are gated on
+# `command -v` so a contributor without the tools installed still gets a
+# usable `make dist`; install with `brew install actionlint shellcheck`.
+lint:
+	@if command -v actionlint >/dev/null 2>&1; then \
+		echo "Running actionlint..."; \
+		actionlint; \
+	else \
+		echo "actionlint not installed — skipping (brew install actionlint)"; \
+	fi
+	@if command -v shellcheck >/dev/null 2>&1; then \
+		echo "Running shellcheck..."; \
+		shellcheck scripts/*.sh; \
+	else \
+		echo "shellcheck not installed — skipping (brew install shellcheck)"; \
+	fi
 
 # Print the current version (from the VERSION file)
 version:

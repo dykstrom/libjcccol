@@ -110,8 +110,8 @@ jobs:
         if: runner.os == 'Windows'
         shell: bash
         run: |
-          echo "${{ matrix.msys2_bin }}" >> $GITHUB_PATH
-          echo "C:/msys64/usr/bin" >> $GITHUB_PATH
+          echo "${{ matrix.msys2_bin }}" >> "$GITHUB_PATH"
+          echo "C:/msys64/usr/bin" >> "$GITHUB_PATH"
 
       - name: Install Clang (Linux)
         if: runner.os == 'Linux'
@@ -272,9 +272,11 @@ jobs:
 
       - name: Release summary
         run: |
-          echo "### Release ${{ steps.version.outputs.version }} created successfully :rocket:" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Tag:** ${{ steps.version.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"
-          echo "**Platforms:** Windows x86_64, Windows ARM64, macOS ARM64, macOS x86_64, Linux x86_64, Linux ARM64" >> "$GITHUB_STEP_SUMMARY"
-          echo "" >> "$GITHUB_STEP_SUMMARY"
-          echo "View release at: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}" >> "$GITHUB_STEP_SUMMARY"
+          {
+            echo "### Release ${{ steps.version.outputs.version }} created successfully :rocket:"
+            echo ""
+            echo "**Tag:** ${{ steps.version.outputs.tag }}"
+            echo "**Platforms:** Windows x86_64, Windows ARM64, macOS ARM64, macOS x86_64, Linux x86_64, Linux ARM64"
+            echo ""
+            echo "View release at: https://github.com/${{ github.repository }}/releases/tag/${{ steps.version.outputs.tag }}"
+          } >> "$GITHUB_STEP_SUMMARY"

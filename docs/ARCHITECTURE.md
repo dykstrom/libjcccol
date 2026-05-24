@@ -100,6 +100,16 @@ The Makefile drives everything. Highlights:
   the `EXE` suffix variable, which is detected from `uname -s` /
   `OS=Windows_NT`.
 
+### Optional Lint Pass
+
+`make lint` runs [actionlint](https://github.com/rhysd/actionlint) over
+`.github/workflows/` and [shellcheck](https://www.shellcheck.net/) over
+`scripts/*.sh`. Both are gated on `command -v`, so contributors without
+the tools installed see "skipping" rather than failures. `make dist`
+depends on `lint`, so a local release-bundle build catches workflow and
+script issues before tagging. Install with
+`brew install actionlint shellcheck`.
+
 ### Toolchain Overrides
 
 `CC`, `AR`, and `RANLIB` are overridable from the environment or command
