@@ -34,4 +34,6 @@ abstraction principle this follows.
 
 - When a function has no Win32 equivalent, what is the convention — stub it,
   return an error, or keep it off the public API entirely? No precedent yet;
-  `millis()` has an implementation on both sides.
+  `col_millis()` has an implementation on both sides. (The vendored
+  collector needs no platform split at all — `src/jcc_gc.c` contains no
+  `#ifdef _WIN32`.)

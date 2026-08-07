@@ -16,7 +16,7 @@
     #include <time.h>
 #endif
 
-int64_t millis(void) {
+int64_t col_millis(void) {
 #ifdef _WIN32
     /* Windows implementation using GetSystemTimeAsFileTime */
     FILETIME ft;

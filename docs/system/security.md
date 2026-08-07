@@ -21,9 +21,31 @@ Third-party actions are pinned by major-version tag (`@v6`, `@v2`, `@v7`,
 fixes flowing automatically, at the cost of trusting each action owner not to
 move a published tag.
 
-The public API accepts no caller-supplied data: `millis(void)` takes no
-arguments, so there is currently no input-validation surface. Revisit this file
-when a function that takes arguments is added.
+## Input surface
+
+`col_millis(void)` takes no arguments and so has no input-validation surface.
+
+The vendored garbage collector (`jcc_gc_*`, see
+[`vendored-gc.md`](vendored-gc.md)) does take arguments, but it is a
+**compiler-emitted contract, not a user-facing API**: JCC generates every
+call. It validates nothing, by design — the header states the caller's
+obligations (register a block before the next allocation, keep root slots
+initialized, balance push/pop frames), and violating them is undefined
+behavior. Treat a contract violation as a compiler bug, not as untrusted
+input to be defended against.
+
+Two environment variables read at `jcc_gc_init` are worth knowing about:
+
+- `JCC_GC_DEBUG` — any non-empty value enables debug output, equivalent to
+  passing the `JCC_GC_DEBUG` flag.
+- `JCC_GC_LOG` — when debug is enabled, names a file the collector opens
+  with `fopen(path, "a")` and writes to for the process's lifetime. The
+  path is used as given, so a COL program's environment can direct these
+  writes anywhere the process can write. It falls back to stdout if the
+  open fails.
+
+Both are inherited from `libjccbas` and are diagnostic features; neither is
+gated on a build flag, so they are live in release builds.
 
 ## Still to document
 

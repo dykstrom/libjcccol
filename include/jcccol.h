@@ -9,5 +9,7 @@
 #define JCCCOL_H
 
 #include "jcccol/core.h"
+#include "jcccol/jcc_gc.h"
+#include "jcccol/strings.h"
 
 #endif /* JCCCOL_H */

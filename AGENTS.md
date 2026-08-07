@@ -30,7 +30,7 @@ linker resolves them at COL link time. Targets macOS, Linux, and Windows
 | Path | What's there |
 |------|-------------|
 | `include/jcccol.h` | Umbrella header. A new module header must be added here to be part of the public API |
-| `include/jcccol/` | Per-module public headers (`core.h`). snake_case, no prefix |
+| `include/jcccol/` | Per-module public headers (`core.h`, `jcc_gc.h`, `strings.h`). Filenames are snake_case with no prefix; the **symbols** they declare are `col_`-prefixed and signature-mangled — see `docs/ARCHITECTURE.md` |
 | `src/` | Implementations, one `.c` per module. Platform splits via `#ifdef _WIN32` |
 | `tests/` | One `test_<module>.c` per module, plus `test_framework.h` |
 | `scripts/` | `release.sh` — bumps `VERSION`, commits, tags. Bash; macOS/Linux only |
@@ -76,6 +76,11 @@ All compiler warnings are errors (`-Werror`). After editing `src/` or
   duplicated Windows / non-Windows step pairs in `release.yml`.
 - **Test objects live under `obj/tests/`**, so a future `tests/core.c` won't
   collide with `src/core.c` at `obj/core.o`.
+- **`src/jcc_gc.c` and `include/jcccol/jcc_gc.h` are vendored — do not edit
+  them here.** `libjccbas` is the canonical copy; fixes go upstream and are
+  re-vendored. The copy is verbatim apart from one `#include` line, so any
+  local edit shows up as unexplained drift. See
+  `docs/system/vendored-gc.md`.
 
 ## Working agreement
 

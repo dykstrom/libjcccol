@@ -30,14 +30,20 @@ The library is:
 include/             # Public headers (what JCC will include)
 ├── jcccol.h         # Umbrella header
 └── jcccol/          # Modular headers
-    └── core.h       # Core time/utility functions
+    ├── core.h       # Core time/utility functions
+    ├── jcc_gc.h     # Garbage collector — vendored from libjccbas
+    └── strings.h    # String functions — UTF-8, byte-transparent
 
 src/                 # Implementation files (platform-specific code lives here)
-└── core.c           # Core implementations with Windows/POSIX variants
+├── core.c           # Core implementations with Windows/POSIX variants
+├── jcc_gc.c         # Garbage collector — vendored from libjccbas
+└── strings.c        # String implementations
 
 tests/               # Test suite using a custom in-tree framework
 ├── test_framework.h
-└── test_core.c
+├── test_core.c
+├── test_jcc_gc.c
+└── test_strings.c
 
 scripts/             # Helper scripts (release automation, etc.)
 └── release.sh       # Release script — bash, macOS/Linux only
@@ -46,7 +52,8 @@ scripts/             # Helper scripts (release automation, etc.)
 ├── build.yml        # Matrix build on push/PR (5 platforms)
 └── release.yml      # Tag-triggered release; uploads to GitHub Releases
 
-docs/                # Reviews, design notes, this document
+docs/                # Durable project context: this document, adr/,
+                     # system/, architecture/, reference/, working-notes/
 VERSION              # Single source of truth for the library version
 LICENSE              # GPL-3.0
 
@@ -61,10 +68,78 @@ dist/                # Generated (local / CI): staged release archives
 
 ### Public API
 
-Public functions do **not** use a prefix and are declared in headers under
-`include/jcccol/`. The umbrella header `include/jcccol.h` includes all
-subheaders so callers can `#include <jcccol.h>` without worrying about
-modules.
+Public functions are declared in headers under `include/jcccol/`. The
+umbrella header `include/jcccol.h` includes all subheaders so callers can
+`#include <jcccol.h>` without worrying about modules.
+
+### Symbol Naming
+
+Every symbol libjcccol exports is named by the following two-part scheme.
+The one exception is the vendored garbage collector, which keeps its
+upstream `jcc_gc_*` prefix — see
+[`system/vendored-gc.md`](system/vendored-gc.md).
+
+**Part 1 — the `col_` prefix.** Every exported symbol starts with `col_`.
+A static archive's symbols are visible to the whole link, so plain names
+like `eof`, `substr` or `readln` would risk colliding with libc or with
+the user's own C code in a COL program's final link. `millis` was safe
+only because it was alone.
+
+**Part 2 — signature mangling.** COL overloads functions by arity and
+parameter type, so one COL name can require several exported
+implementations. The exported name is:
+
+```
+col_<name>[_<type>...]
+```
+
+where `<name>` is the COL-level function name and each `<type>` is a
+parameter type token, in declaration order:
+
+| COL type | Token |
+| --- | --- |
+| string | `str` |
+| integer | `i64` |
+| float | `f64` |
+| boolean | `bool` |
+
+Three rules make the mapping mechanical:
+
+- **Parameter types only, in declaration order.** The return type is not
+  encoded.
+- **Zero arity carries no suffix at all** — `col_millis`, not
+  `col_millis_void`.
+- **The source string is the first parameter** of every string function,
+  which leaves room for a future method-call sugar where
+  `"hello".indexof("ll")` desugars to `indexof("hello", "ll")`.
+
+Worked examples:
+
+| COL signature | Exported symbol |
+| --- | --- |
+| `millis()` | `col_millis` |
+| `readln()` | `col_readln` |
+| `eof()` | `col_eof` |
+| `concat(string, string)` | `col_concat_str_str` |
+| `substr(string, integer, integer)` | `col_substr_str_i64_i64` |
+| `indexof(string, string)` | `col_indexof_str_str` |
+| `indexof(string, string, integer)` | `col_indexof_str_str_i64` |
+| `string(integer)` | `col_string_i64` |
+| `string(float)` | `col_string_f64` |
+| `string(boolean)` | `col_string_bool` |
+
+This follows `libjccbas`'s scheme (`add_Str_Str`, `instr_I64_Str_Str`)
+but **lower-cases the type tokens**, which is where libjccbas itself
+should end up. Note that libjccbas's `instr_I64_Str_Str` is INSTR's
+three-argument overload (`start`, `x$`, `y$`) — the leading `I64` is a
+parameter, not a return type.
+
+Because JCC emits calls to these names directly, **the exported name is
+the contract**. Renaming one is an ABI break; see
+[Relationship to JCC](#relationship-to-jcc).
+
+The decision behind this rule, including the alternatives rejected, is
+[ADR 0001](adr/0001-col-symbol-naming-scheme.md).
 
 ### Platform Handling
 
@@ -79,9 +154,12 @@ headers so glibc exposes POSIX.1-2008 symbols (e.g. `clock_gettime`) under
 
 ### Naming Conventions
 
-- Public functions: `functionname()` (snake_case, no prefix).
-- Header guards: `JCCCOL_MODULE_H` pattern.
-- Internal/static functions: any reasonable naming.
+- Public functions: `col_`-prefixed snake_case, mangled per
+  [Symbol Naming](#symbol-naming) above.
+- Header guards: `JCCCOL_MODULE_H` pattern. (Vendored files keep their
+  upstream guards.)
+- Internal/static functions: any reasonable naming, and no `col_` prefix —
+  the prefix marks the exported surface.
 
 ## Build System
 
@@ -270,13 +348,10 @@ Documented here so a future contributor doesn't have to rediscover them.
 These are tracked against the architecture review at
 `docs/REVIEW-claude-opus-4-7-2026-05-22.md`.
 
-- **Symbol prefix policy.** Public functions currently have no `jcccol_`
-  prefix. This works for `millis()` but will collide with libc / common
-  user code once functions like `sleep`, `print`, or `read_line` are
-  added. Decide before the second public function lands. Options: (a)
-  keep unprefixed and trust link-time isolation, (b) prefix everything
-  `col_`, (c) keep convenient names in headers and use static-inline
-  wrappers around prefixed link symbols.
+- **Symbol prefix policy — settled.** Resolved as option (b), prefix
+  everything `col_`, plus signature mangling for overloads. The rule is
+  under [Symbol Naming](#symbol-naming); the decision is
+  [ADR 0001](adr/0001-col-symbol-naming-scheme.md).
 - **No `version()` API yet.** The `VERSION` file exists and the Makefile
   reads it, but it is not yet passed as `-DJCCCOL_VERSION_STRING=...` and
   no C-level accessor exists. Add both together when the first consumer
