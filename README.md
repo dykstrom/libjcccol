@@ -21,7 +21,7 @@ integration details, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
 
 - **macOS** (arm64, x86_64)
 - **Linux** (x86_64, arm64)
-- **Windows** (x86_64, via MSYS2/MinGW)
+- **Windows** (x86_64 via MSYS2/MINGW64, arm64 via MSYS2/CLANGARM64)
 
 ## Building
 
