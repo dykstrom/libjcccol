@@ -3,7 +3,15 @@ name: build
 on:
   push:
   pull_request:
+    branches: [ main, dev ]
   workflow_dispatch:
+
+# Supersede in-flight runs for the same ref. Pull request events report
+# refs/pull/N/merge rather than the source branch, so key on the head label
+# there instead, keeping a fork PR's runs in one group.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.label || github.ref }}
+  cancel-in-progress: true
 
 jobs:
   # A job skipped by the if below never expands its matrix, so a name using
