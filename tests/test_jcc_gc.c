@@ -8,9 +8,16 @@
  * program.
  */
 
-/* Request POSIX.1-2008 visibility so putenv() (used by the debug-output
- * test) is declared in <stdlib.h> under -std=c11 on glibc. Must precede
- * every system header include. */
+/* Request XSI + POSIX.1-2008 visibility, so putenv() (used by the
+ * debug-output test) is declared in <stdlib.h> under -std=c11 on glibc.
+ *
+ * _POSIX_C_SOURCE is NOT enough here, unlike elsewhere in this repo:
+ * glibc guards putenv with __USE_MISC || __USE_XOPEN, and _POSIX_C_SOURCE
+ * sets neither. __USE_MISC would normally come from the _DEFAULT_SOURCE
+ * glibc applies by default, but -std=c11 defines __STRICT_ANSI__, which
+ * turns that default off. _XOPEN_SOURCE 700 supplies __USE_XOPEN instead
+ * (putenv needs >= 500). Must precede every system header include. */
+#define _XOPEN_SOURCE 700
 #define _POSIX_C_SOURCE 200809L
 
 #include <stdint.h>

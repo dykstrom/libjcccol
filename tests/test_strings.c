@@ -5,6 +5,13 @@
  * last because each one calls freopen() on stdin, which cannot be undone.
  */
 
+/* Request POSIX.1-2008 visibility so nanosleep() is declared in <time.h>
+ * under -std=c11 on glibc. Needed even though no test here calls
+ * test_sleep_ms(): the helper is a static inline in test_framework.h, so
+ * its body is compiled into every translation unit that includes the
+ * header. Must precede every system header include. */
+#define _POSIX_C_SOURCE 200809L
+
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
