@@ -2,15 +2,20 @@ name: build
 
 on:
   push:
-    branches: [ master, main, dev ]
   pull_request:
-    branches: [ master, main ]
   workflow_dispatch:
 
 jobs:
   build:
     name: Build ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
+
+    # Push covers every branch in this repo, so a same-repo PR would only
+    # duplicate a run that already happened. Fork PRs have no such push
+    # event here, so they are the only pull_request events worth building.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name != github.repository
 
     strategy:
       fail-fast: false
