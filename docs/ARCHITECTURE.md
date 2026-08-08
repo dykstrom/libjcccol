@@ -49,7 +49,7 @@ scripts/             # Helper scripts (release automation, etc.)
 └── release.sh       # Release script — bash, macOS/Linux only
 
 .github/workflows/   # GitHub Actions
-├── build.yml        # Matrix build on push/PR (5 platforms)
+├── build.yml        # Matrix build, 6 platforms; triggers in system/ci.md
 └── release.yml      # Tag-triggered release; uploads to GitHub Releases
 
 docs/                # Durable project context: this document, adr/,

@@ -65,9 +65,17 @@ All compiler warnings are errors (`-Werror`). After editing `src/` or
 ## Gotchas
 
 - **`#define _POSIX_C_SOURCE 200809L` goes at the very top of every `.c` that
-  uses POSIX-only symbols**, before any system header. Without it, glibc hides
-  `clock_gettime`/`CLOCK_REALTIME` under `-std=c11`. macOS headers are
-  permissive and won't catch the omission — Linux CI will.
+  reaches a POSIX-only symbol**, before any system header. Without it, glibc
+  hides `clock_gettime`/`nanosleep` under `-std=c11`. "Reaches" covers
+  indirect use: `test_sleep_ms` in `tests/test_framework.h` is a `static
+  inline`, so its `nanosleep` call compiles into every test `.c` that
+  includes the header, whether or not that file calls it. macOS headers are
+  permissive and won't catch the omission — Linux will.
+- **`_POSIX_C_SOURCE` does not cover XSI symbols.** `putenv` needs
+  `_XOPEN_SOURCE >= 500` on top of it: glibc guards `putenv` with
+  `__USE_MISC || __USE_XOPEN`, and `-std=c11` defines `__STRICT_ANSI__`,
+  which suppresses the `_DEFAULT_SOURCE` that would otherwise supply
+  `__USE_MISC`. See the header comment in `tests/test_jcc_gc.c`.
 - **The Makefile's `ifeq ($(origin CC),default)` is not stylistic.** Make
   pre-defines `CC=cc`, so a plain `CC ?= clang` is a no-op and the build
   silently falls through to gcc on Linux. Same for `AR`.
@@ -89,3 +97,8 @@ change and why before any file-modifying tool call. For multi-step work,
 write the plan out and get confirmation before proceeding. This applies to
 every kind of change — new functionality, bug fixes, refactors, build-system
 tweaks, docs.
+
+**Ask before starting colima or a Docker container.** Verifying Linux
+locally boots a VM on the developer's machine, so propose it and wait for a
+yes rather than starting one. See [`docs/system/build.md`](docs/system/build.md)
+for the procedure once you have it.
