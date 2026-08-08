@@ -23,6 +23,13 @@ fork predicate. Two consequences:
 - A same-repo pull request still creates the check and reports it as skipped,
   rather than not creating it. GitHub counts a skipped job as successful, so
   the check stays safe to mark required in branch protection.
+- The job deliberately carries no `name:`. A skipped job never expands its
+  matrix, so a name built from `${{ matrix.platform }}` would appear
+  unrendered in the checks list. Letting GitHub derive the name from the job
+  id gives `build (linux-arm64)` when the matrix expands and plain `build`
+  when it does not. `platform` is the only top-level matrix key for the same
+  reason — the derived name lists top-level keys only, so everything else
+  stays under `include:`. `jcc` uses this arrangement in its own workflows.
 - Fork builds get a read-only `GITHUB_TOKEN` and no repository secrets. The
   current steps need neither.
 
