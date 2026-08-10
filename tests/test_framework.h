@@ -15,7 +15,14 @@
  * headers declare nanosleep without the macro, so an omission only
  * surfaces on Linux. Defining it here in the header is too late if the
  * caller has already included <stdlib.h> etc. See tests/test_core.c for
- * the pattern. */
+ * the pattern.
+ *
+ * The check below turns an omission into a compile error everywhere,
+ * rather than a missing-declaration failure that only Linux CI reports. */
+
+#if !defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 200809L
+    #error "define _POSIX_C_SOURCE 200809L at the top of this .c file, before any system header (see the note above)"
+#endif
 
 #include <stdio.h>
 #include <stdint.h>

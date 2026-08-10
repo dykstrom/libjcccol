@@ -59,9 +59,15 @@ Two ordering constraints:
   after which the `atexit`-installed handler is a no-op. It asserts on the
   exact `jcc_gc: exit: registered=N collections=M freed=K live=L` line
   that JCC's own integration tests match on.
-- The file defines `_POSIX_C_SOURCE 200809L` at the very top, because
-  `debug_exit_stats` calls `putenv`. `jcc_gc.c` itself needs no feature
-  macro — it only uses `getenv`, which is C11.
+- The file defines **both** `_XOPEN_SOURCE 700` and `_POSIX_C_SOURCE
+  200809L` at the very top. `_POSIX_C_SOURCE` alone is not enough for the
+  `putenv` that `debug_exit_stats` calls: glibc guards `putenv` with
+  `__USE_MISC || __USE_XOPEN`, and `-std=c11` defines `__STRICT_ANSI__`,
+  which suppresses the `_DEFAULT_SOURCE` that would supply `__USE_MISC`.
+  `_XOPEN_SOURCE` supplies `__USE_XOPEN` instead (`putenv` needs `>= 500`).
+  `_POSIX_C_SOURCE` is still required independently, because
+  `tests/test_framework.h` needs it for `nanosleep`. `jcc_gc.c` itself
+  needs no feature macro — it only uses `getenv`, which is C11.
 
 ## Re-vendoring
 

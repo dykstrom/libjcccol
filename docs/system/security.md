@@ -25,6 +25,39 @@ move a published tag.
 
 `col_millis(void)` takes no arguments and so has no input-validation surface.
 
+### The string runtime
+
+The `col_*` string functions (see [`string-runtime.md`](string-runtime.md))
+take arguments, but like the collector below they are a **compiler-emitted
+contract**: JCC generates every call, and the string pointers it passes come
+from the collector or from a string literal it emitted. A NULL argument is
+undefined behavior, not a case to defend against — the functions call
+`strlen`/`strstr` directly. Treat one as a compiler bug.
+
+The *integer* arguments are different, and deliberately so.
+`col_substr_str_i64_i64` is total: a negative `start`, a `start` at or past
+the end, and a non-positive `length` all yield the empty string, and a
+`length` running past the end truncates. Nothing in that path can produce an
+out-of-bounds read, so a COL program cannot reach past a string's end by
+passing hostile offsets. This is a property to preserve, not incidental.
+
+**`col_readln` is the library's only genuinely untrusted input path.** It
+reads a line of arbitrary length from stdin — whatever the COL program's
+environment feeds it — into a buffer that doubles as needed. Two consequences:
+
+- **There is no line-length cap.** A writer that never emits a newline drives
+  allocation until it fails. The failure is fail-stop, not corruption: the
+  growth path exits with a diagnostic rather than returning NULL or writing
+  short, per the never-null invariant. A COL program can therefore be made to
+  die on unbounded input, which is accepted — the alternative is truncating a
+  line silently, which is worse for a language runtime.
+- **No encoding validation happens.** COL strings are byte-transparent, so
+  invalid UTF-8 on stdin is stored and returned unchanged. Every `col_*`
+  function operates on bytes and never inspects the encoding. Validation is
+  the consumer's business; do not add it here.
+
+### The garbage collector
+
 The vendored garbage collector (`jcc_gc_*`, see
 [`vendored-gc.md`](vendored-gc.md)) does take arguments, but it is a
 **compiler-emitted contract, not a user-facing API**: JCC generates every

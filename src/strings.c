@@ -28,6 +28,20 @@ static char *col_alloc(size_t size) {
     return p;
 }
 
+/* Growing counterpart to col_alloc, with the same never-returns-NULL
+ * contract. The old block is released on failure even though exit(1)
+ * follows, so the two paths out of this function look the same to a
+ * leak checker. */
+static char *col_realloc(char *p, size_t size) {
+    char *grown = realloc(p, size);
+    if (grown == NULL) {
+        free(p);
+        fprintf(stderr, "libjcccol: out of memory\n");
+        exit(1);
+    }
+    return grown;
+}
+
 /* A fresh, independently owned empty string. Never a shared constant —
  * the collector frees whatever it is handed. */
 static char *col_empty(void) {
@@ -130,15 +144,8 @@ char *col_readln(void) {
     while ((c = fgetc(stdin)) != EOF && c != '\n') {
         /* Keep one byte in reserve for the terminator. */
         if (len + 1 >= capacity) {
-            size_t new_capacity = capacity * 2;
-            char *grown = realloc(buffer, new_capacity);
-            if (grown == NULL) {
-                free(buffer);
-                fprintf(stderr, "libjcccol: out of memory\n");
-                exit(1);
-            }
-            buffer = grown;
-            capacity = new_capacity;
+            capacity *= 2;
+            buffer = col_realloc(buffer, capacity);
         }
         buffer[len++] = (char) c;
     }
