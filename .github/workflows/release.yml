@@ -218,7 +218,7 @@ jobs:
 
           ### What's Changed
 
-          See the [commit history](https://github.com/${{ github.repository }}/commits/${{ steps.version.outputs.tag }}) for detailed changes in this release.
+          [Commit history](https://github.com/${{ github.repository }}/commits/${{ steps.version.outputs.tag }}).
 
           ### Platform Support
 
