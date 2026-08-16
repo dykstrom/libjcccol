@@ -223,8 +223,9 @@ uploads archives named `libjcccol-${version}-${classifier}.${type}` to a
 GitHub Release. No `gh` CLI is required locally.
 
 **Single source of truth for the version:** the `VERSION` file at the
-repo root. The Makefile reads it via `$(shell cat VERSION)`. Bump it via
-the release script — do not edit it by hand outside of a release.
+repo root. The Makefile reads it via `$(shell cat VERSION)`. It is bumped
+either by the release script or during feature work — see the two paths
+below.
 
 ### Standard Flow (macOS / Linux)
 
@@ -236,7 +237,21 @@ git show HEAD && git tag -n1 v0.2.0   # review
 git push --follow-tags origin master  # publish (triggers CI release)
 ```
 
-To abort before pushing: `git tag -d v0.2.0 && git reset --hard HEAD~1`.
+`release.sh` takes one of two paths depending on `VERSION`:
+
+- **`VERSION` differs from the target** — it writes the file, commits
+  `Release vX.Y.Z`, and tags. That commit exists only on `master`/`main`;
+  `dev` does not have it.
+- **`VERSION` already equals the target** — it prints `VERSION already
+  X.Y.Z — skipping bump commit` and creates the tag alone. This is the path
+  when `VERSION` was bumped during feature work and reached `main` through
+  `dev`. v0.2.0 was released this way.
+
+To abort before pushing: `git tag -d v0.2.0` always, plus
+`git reset --hard HEAD~1` **only if a bump commit was created**. On the
+no-change path there is no release commit, and the reset discards the last
+real commit instead. `release.sh` prints the applicable abort commands at
+the end of a run.
 See [`scripts/release.sh`](../scripts/release.sh) for the exact checks.
 
 ### Windows
