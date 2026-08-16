@@ -18,7 +18,7 @@ extern "C" {
  *
  * @return Number of milliseconds since epoch
  */
-int64_t millis(void);
+int64_t col_millis(void);
 
 #ifdef __cplusplus
 }

@@ -7,11 +7,22 @@
 #ifndef TEST_FRAMEWORK_H
 #define TEST_FRAMEWORK_H
 
-/* NOTE: tests using test_sleep_ms() must define _POSIX_C_SOURCE 200809L
- * at the top of the .c file (before any system header is included) so
- * glibc declares nanosleep() under -std=c11. Defining it here in the
- * header is too late if the caller has already included <stdlib.h> etc.
- * See tests/test_core.c for the pattern. */
+/* NOTE: every .c that includes this header must define _POSIX_C_SOURCE
+ * 200809L at the top of the file (before any system header is included)
+ * so glibc declares nanosleep() under -std=c11. This applies even to a
+ * file that never calls test_sleep_ms(): the helper is a static inline,
+ * so its body is compiled into every translation unit regardless. macOS
+ * headers declare nanosleep without the macro, so an omission only
+ * surfaces on Linux. Defining it here in the header is too late if the
+ * caller has already included <stdlib.h> etc. See tests/test_core.c for
+ * the pattern.
+ *
+ * The check below turns an omission into a compile error everywhere,
+ * rather than a missing-declaration failure that only Linux CI reports. */
+
+#if !defined(_POSIX_C_SOURCE) || _POSIX_C_SOURCE < 200809L
+    #error "define _POSIX_C_SOURCE 200809L at the top of this .c file, before any system header (see the note above)"
+#endif
 
 #include <stdio.h>
 #include <stdint.h>

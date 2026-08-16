@@ -2,19 +2,42 @@ name: build
 
 on:
   push:
-    branches: [ master, main, dev ]
   pull_request:
-    branches: [ master, main ]
+    branches: [ main, dev ]
   workflow_dispatch:
 
+# Supersede in-flight runs for the same ref. Pull request events report
+# refs/pull/N/merge rather than the source branch, so key on the head label
+# there instead, keeping a fork PR's runs in one group.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.head.label || github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  # A job skipped by the if below never expands its matrix, so a name using
+  # matrix.platform would show up raw in the checks list. Let GitHub derive
+  # the name from the job id and the matrix instead, and keep platform the
+  # only top-level matrix key so the derived name stays short.
   build:
-    name: Build ${{ matrix.platform }}
     runs-on: ${{ matrix.os }}
+
+    # Push covers every branch in this repo, so a same-repo PR would only
+    # duplicate a run that already happened. Fork PRs have no such push
+    # event here, so they are the only pull_request events worth building.
+    if: >-
+      github.event_name != 'pull_request' ||
+      github.event.pull_request.head.repo.full_name != github.repository
 
     strategy:
       fail-fast: false
       matrix:
+        platform:
+          - windows-x86_64
+          - windows-arm64
+          - macos-arm64
+          - macos-x86_64
+          - linux-x86_64
+          - linux-arm64
         include:
           # Windows x86_64 — MSYS2 MINGW64 environment
           - platform: windows-x86_64
