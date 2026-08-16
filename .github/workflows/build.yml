@@ -2,6 +2,15 @@ name: build
 
 on:
   push:
+    # Every branch builds, but no tag does: release.yml already builds the
+    # full matrix for a tag, so a tag push would otherwise run the same six
+    # jobs twice.
+    #
+    # This must be `branches`, not `tags-ignore`. Defining only one of the
+    # two ref kinds suppresses the other entirely, so `tags-ignore: '**'`
+    # alone silently stops every branch build. Naming branches and leaving
+    # tags undefined is what excludes tags.
+    branches: [ '**' ]
   pull_request:
     branches: [ main, dev ]
   workflow_dispatch:
