@@ -7,14 +7,25 @@ tag-triggered release flow in `release.yml`, see
 | Event | Builds? |
 |---|---|
 | Push to any branch | Yes |
+| Push of a tag | No — `release.yml` builds tags |
 | Pull request from a fork into `main` or `dev` | Yes |
 | Pull request from a fork into any other branch | No |
 | Pull request from a branch in this repo | No — reported as skipped |
 | `workflow_dispatch` | Yes |
 
-`push` carries no `branches:` filter, so every branch builds on push. A
-same-repo pull request would only repeat the build its own push already ran,
-so the job is gated on the head repository differing from
+`push` carries `branches: [ '**' ]`, so every branch builds on push and no
+tag does. `release.yml` builds the same six-platform matrix for a tag, so
+without this a release tag ran both workflows over the same tree.
+
+The filter must be spelled that way round. GitHub's rule is that defining
+only `tags`/`tags-ignore`, or only `branches`/`branches-ignore`, stops the
+workflow for the ref kind left undefined. So `tags-ignore: [ '**' ]` on its
+own does not mean "all branches, no tags" — it silently suppresses every
+branch build too. Naming branches and leaving tags undefined is what
+excludes tags.
+
+A same-repo pull request would only repeat the build its own push already
+ran, so the job is gated on the head repository differing from
 `github.repository`. Fork pull requests produce no push event in this repo,
 which makes them the only `pull_request` events that build, and `on:`
 restricts those to the two long-lived branches.

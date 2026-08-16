@@ -82,6 +82,11 @@ All compiler warnings are errors (`-Werror`). After editing `src/` or
 - **Step-level `shell:` in GitHub Actions can't be driven from a matrix
   field** — GHA parses `shell:` before matrix substitution. Hence the
   duplicated Windows / non-Windows step pairs in `release.yml`.
+- **A `push:` filter for one ref kind silently disables the other.** Defining
+  only `tags`/`tags-ignore`, or only `branches`/`branches-ignore`, stops the
+  workflow for the undefined kind. `tags-ignore: [ '**' ]` therefore does not
+  mean "all branches, no tags" — it kills every branch build, with no error
+  and no run to notice. `build.yml` says `branches: [ '**' ]` instead.
 - **Test objects live under `obj/tests/`**, so a future `tests/core.c` won't
   collide with `src/core.c` at `obj/core.o`.
 - **`src/jcc_gc.c` and `include/jcccol/jcc_gc.h` are vendored — do not edit
