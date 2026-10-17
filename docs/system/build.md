@@ -52,4 +52,34 @@ docker exec clang-docker-arm64 sh -c \
    clang -std=c11 -Werror -D_XOPEN_SOURCE=700 -c p.c -o /dev/null'
 ```
 
+## Verifying Windows from macOS
+
+Windows arm64 runs locally as the Parallels VM `Windows 11`. Its compiler is
+llvm-mingw from winget: clang targeting `aarch64-w64-windows-gnu`. That is
+not the MSYS2 CLANGARM64 toolchain that CI uses. There is no local Windows
+x86_64.
+
+**Ask the developer before starting Parallels Desktop or the VM.** Starting
+either one is the developer's call, not the agent's. Propose it and wait.
+
+The Makefile needs a POSIX shell, so run it from Git Bash, not `cmd`. The
+`make` that Git Bash finds is GnuWin32's GNU Make 3.81, and it runs
+`make test` with the real Makefile.
+
+`prlctl exec` runs as SYSTEM by default, and SYSTEM does not have llvm-mingw
+on its PATH. Pass `--current-user`. The macOS home folder appears as `Z:\`.
+Copy the tree to a local folder first, so that the build does not write into
+the host tree:
+
+```sh
+prlctl exec "Windows 11" --current-user cmd /c \
+  'robocopy Z:\Workspace\libjcccol C:\Users\johan\libjcccol-win /MIR /XD .git build obj dist'
+prlctl exec "Windows 11" --current-user cmd /c \
+  '"C:\Program Files\Git\bin\bash.exe" -lc "cd /c/Users/johan/libjcccol-win && make clean && make test"'
+prlctl exec "Windows 11" --current-user cmd /c 'rmdir /s /q C:\Users\johan\libjcccol-win'
+```
+
+Every `cmd` start in that VM prints "The system cannot find the path
+specified." It comes from the VM's own setup and does not mean a step failed.
+
 See [`ci.md`](ci.md) for which of these platforms CI builds, and when.

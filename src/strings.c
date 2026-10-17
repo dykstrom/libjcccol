@@ -7,7 +7,9 @@
 
 #include "jcccol/strings.h"
 
+#include <errno.h>
 #include <inttypes.h>
+#include <math.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -58,6 +60,20 @@ static char *col_copy(const char *s, size_t len) {
     return result;
 }
 
+/* The six ASCII whitespace bytes. Not isspace(), whose answer depends on
+ * the locale and is undefined for negative char values. */
+static bool col_is_space(char c) {
+    return c == ' ' || c == '\t' || c == '\n' || c == '\v' || c == '\f' || c == '\r';
+}
+
+/* True if only whitespace remains from p to the end of the string. */
+static bool col_only_space(const char *p) {
+    while (col_is_space(*p)) {
+        p++;
+    }
+    return *p == '\0';
+}
+
 /* ---- Construction and slicing ---- */
 
 char *col_concat_str_str(const char *s, const char *t) {
@@ -103,6 +119,84 @@ int64_t col_indexof_str_str(const char *s, const char *needle) {
     return (hit == NULL) ? -1 : (int64_t) (hit - s);
 }
 
+char *col_strip_str(const char *s) {
+    const char *start = s;
+    const char *end = s + strlen(s);
+
+    while (start < end && col_is_space(*start)) {
+        start++;
+    }
+    while (end > start && col_is_space(end[-1])) {
+        end--;
+    }
+    return col_copy(start, (size_t) (end - start));
+}
+
+char *col_repeat_str_i64(const char *s, int64_t n) {
+    size_t s_len = strlen(s);
+    size_t total;
+    char *result;
+    int64_t i;
+
+    if (n <= 0 || s_len == 0) {
+        return col_empty();
+    }
+
+    /* Check before multiplying: an overflowed size would allocate a small
+     * block and the copies below would run past it. Also covers an n
+     * that does not fit in size_t at all. */
+    if ((uint64_t) n > (SIZE_MAX - 1) / s_len) {
+        fprintf(stderr, "libjcccol: out of memory\n");
+        exit(1);
+    }
+
+    total = s_len * (size_t) n;
+    result = col_alloc(total + 1);
+    for (i = 0; i < n; i++) {
+        memcpy(result + (size_t) i * s_len, s, s_len);
+    }
+    result[total] = '\0';
+    return result;
+}
+
+char *col_replace_str_str_str(const char *s, const char *old_str, const char *new_str) {
+    size_t old_len = strlen(old_str);
+    size_t new_len = strlen(new_str);
+    size_t count = 0;
+    size_t total;
+    const char *p;
+    const char *hit;
+    char *result;
+    char *out;
+
+    if (old_len == 0) {
+        return col_copy(s, strlen(s));
+    }
+
+    /* Two passes over s: count the matches to size the block exactly,
+     * then copy. Both passes skip past each match, so they agree on
+     * which occurrences count. */
+    for (p = s; (hit = strstr(p, old_str)) != NULL; p = hit + old_len) {
+        count++;
+    }
+
+    /* The result is s with each match swapped, so its length is the old
+     * length plus count * (new_len - old_len), written without a negative
+     * intermediate. */
+    total = strlen(s) - count * old_len + count * new_len;
+    result = col_alloc(total + 1);
+
+    out = result;
+    for (p = s; (hit = strstr(p, old_str)) != NULL; p = hit + old_len) {
+        memcpy(out, p, (size_t) (hit - p));
+        out += hit - p;
+        memcpy(out, new_str, new_len);
+        out += new_len;
+    }
+    strcpy(out, p);
+    return result;
+}
+
 /* ---- Conversions ----
  *
  * Sized with a snprintf(NULL, 0, ...) probe so the allocation is exact and
@@ -129,6 +223,42 @@ char *col_string_bool(bool x) {
      * (Bool.getFormat() is "%d") and is intended to follow; see the note
      * in jcccol/strings.h. */
     return x ? col_copy("true", 4) : col_copy("false", 5);
+}
+
+/* The parsers are strict: apart from surrounding whitespace the whole
+ * string must be consumed, otherwise the result is 0. strtoll and strtod
+ * skip leading whitespace themselves; col_only_space checks the tail. */
+
+int64_t col_i64_str(const char *s) {
+    char *end;
+    long long value;
+
+    /* Base 10, not 0: base 0 would accept "0x10" as hex and "010" as
+     * octal. With base 10, "0x10" stops after the "0" and the tail check
+     * rejects it. */
+    errno = 0;
+    value = strtoll(s, &end, 10);
+    if (end == s || errno == ERANGE || !col_only_space(end)) {
+        return 0;
+    }
+    return (int64_t) value;
+}
+
+double col_f64_str(const char *s) {
+    char *end;
+    double value;
+
+    errno = 0;
+    value = strtod(s, &end);
+    if (end == s || !col_only_space(end)) {
+        return 0.0;
+    }
+    /* strtod also reports ERANGE on underflow, where the tiny value it
+     * returns is still the right answer. Only overflow yields 0. */
+    if (errno == ERANGE && (value == HUGE_VAL || value == -HUGE_VAL)) {
+        return 0.0;
+    }
+    return value;
 }
 
 /* ---- Standard input ---- */

@@ -107,6 +107,40 @@ TEST(indexof_edge_cases) {
     return 0;
 }
 
+/* ---- strip, repeat, replace ---- */
+
+TEST(strip) {
+    ASSERT_STR_EQ(col_strip_str("  hi \t\n"), "hi");
+    ASSERT_STR_EQ(col_strip_str("\v\f\rhi"), "hi");
+    ASSERT_STR_EQ(col_strip_str("a b"), "a b");
+    ASSERT_STR_EQ(col_strip_str("   "), "");
+    ASSERT_STR_EQ(col_strip_str(""), "");
+    /* UTF-8 bytes are text, not whitespace. */
+    ASSERT_STR_EQ(col_strip_str(" sm\xc3\xb6rg\xc3\xa5s "), "sm\xc3\xb6rg\xc3\xa5s");
+    return 0;
+}
+
+TEST(repeat) {
+    ASSERT_STR_EQ(col_repeat_str_i64("ab", 3), "ababab");
+    ASSERT_STR_EQ(col_repeat_str_i64("ab", 1), "ab");
+    ASSERT_STR_EQ(col_repeat_str_i64("ab", 0), "");
+    ASSERT_STR_EQ(col_repeat_str_i64("ab", -1), "");
+    ASSERT_STR_EQ(col_repeat_str_i64("", 5), "");
+    return 0;
+}
+
+TEST(replace) {
+    ASSERT_STR_EQ(col_replace_str_str_str("a.b.c", ".", "-"), "a-b-c");
+    ASSERT_STR_EQ(col_replace_str_str_str("aaa", "aa", "b"), "ba");
+    ASSERT_STR_EQ(col_replace_str_str_str("ab", "b", "bb"), "abb");
+    ASSERT_STR_EQ(col_replace_str_str_str("abc", "b", ""), "ac");
+    ASSERT_STR_EQ(col_replace_str_str_str("abc", "x", "y"), "abc");
+    ASSERT_STR_EQ(col_replace_str_str_str("abc", "", "y"), "abc");
+    ASSERT_STR_EQ(col_replace_str_str_str("", "a", "b"), "");
+    ASSERT_STR_EQ(col_replace_str_str_str("hello world", "world", "COL"), "hello COL");
+    return 0;
+}
+
 /* ---- Conversions ---- */
 
 TEST(string_i64) {
@@ -132,6 +166,48 @@ TEST(string_f64) {
 TEST(string_bool) {
     ASSERT_STR_EQ(col_string_bool(true), "true");
     ASSERT_STR_EQ(col_string_bool(false), "false");
+    return 0;
+}
+
+/* ---- Parsing ---- */
+
+/* Strict: apart from surrounding whitespace, the whole string must be one
+ * base-10 integer. Anything else is 0. */
+TEST(i64_str) {
+    ASSERT(col_i64_str("42") == 42);
+    ASSERT(col_i64_str(" 42 ") == 42);
+    ASSERT(col_i64_str("\t42\n") == 42);
+    ASSERT(col_i64_str("+42") == 42);
+    ASSERT(col_i64_str("-7") == -7);
+    ASSERT(col_i64_str("0") == 0);
+    ASSERT(col_i64_str("9223372036854775807") == INT64_MAX);
+    ASSERT(col_i64_str("-9223372036854775808") == INT64_MIN);
+    ASSERT_MSG(col_i64_str("9223372036854775808") == 0, "out of range is 0");
+    ASSERT_MSG(col_i64_str("-9223372036854775809") == 0, "out of range is 0");
+    ASSERT_MSG(col_i64_str("42abc") == 0, "trailing text is 0");
+    ASSERT_MSG(col_i64_str("4 2") == 0, "inner space is 0");
+    ASSERT_MSG(col_i64_str("abc") == 0, "no digits is 0");
+    ASSERT_MSG(col_i64_str("") == 0, "empty is 0");
+    ASSERT_MSG(col_i64_str("   ") == 0, "whitespace only is 0");
+    ASSERT_MSG(col_i64_str("-") == 0, "sign only is 0");
+    ASSERT_MSG(col_i64_str("0x10") == 0, "hex is 0");
+    ASSERT_MSG(col_i64_str("1.5") == 0, "a fraction is 0");
+    return 0;
+}
+
+/* Every expected value is exactly representable, so == is safe. */
+TEST(f64_str) {
+    ASSERT(col_f64_str("3.5") == 3.5);
+    ASSERT(col_f64_str(" 3.5 ") == 3.5);
+    ASSERT(col_f64_str("-2.5e3") == -2500.0);
+    ASSERT(col_f64_str(".5") == 0.5);
+    ASSERT(col_f64_str("42") == 42.0);
+    ASSERT_MSG(col_f64_str("1e999") == 0.0, "overflow is 0");
+    ASSERT_MSG(col_f64_str("-1e999") == 0.0, "overflow is 0");
+    ASSERT_MSG(col_f64_str("1e-999") >= 0.0, "underflow is not an error");
+    ASSERT_MSG(col_f64_str("3.5x") == 0.0, "trailing text is 0");
+    ASSERT_MSG(col_f64_str("abc") == 0.0, "no number is 0");
+    ASSERT_MSG(col_f64_str("") == 0.0, "empty is 0");
     return 0;
 }
 
@@ -322,9 +398,14 @@ int main(void) {
     RUN_TEST(substr_indexof_composition);
     RUN_TEST(indexof_basic);
     RUN_TEST(indexof_edge_cases);
+    RUN_TEST(strip);
+    RUN_TEST(repeat);
+    RUN_TEST(replace);
     RUN_TEST(string_i64);
     RUN_TEST(string_f64);
     RUN_TEST(string_bool);
+    RUN_TEST(i64_str);
+    RUN_TEST(f64_str);
     RUN_TEST(empty_strings_are_distinct_blocks);
     RUN_TEST(results_do_not_alias_arguments);
     RUN_TEST(utf8_is_byte_transparent);

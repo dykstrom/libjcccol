@@ -23,7 +23,10 @@ move a published tag.
 
 ## Input surface
 
-`col_millis(void)` takes no arguments and so has no input-validation surface.
+`col_millis` and `col_rnd` take no arguments, and `col_randomize_i64` accepts
+any seed. `col_sleep_i64` returns at once for zero or a negative value. On
+Windows it clamps a value above the `DWORD` range to `0xFFFFFFFE` ms, so no
+input reaches `INFINITE`.
 
 ### The string runtime
 
@@ -41,6 +44,11 @@ the end, and a non-positive `length` all yield the empty string, and a
 out-of-bounds read, so a COL program cannot reach past a string's end by
 passing hostile offsets. This is a property to preserve, not incidental.
 
+`col_repeat_str_i64` keeps the same property for a large count. It checks
+that `strlen(s) * n` fits in `size_t` before it allocates. A count that does
+not fit exits with `libjcccol: out of memory`, the same path as any other
+allocation failure, so the function never writes past a short block.
+
 **`col_readln` is the library's only genuinely untrusted input path.** It
 reads a line of arbitrary length from stdin — whatever the COL program's
 environment feeds it — into a buffer that doubles as needed. Two consequences:
@@ -55,6 +63,10 @@ environment feeds it — into a buffer that doubles as needed. Two consequences:
   invalid UTF-8 on stdin is stored and returned unchanged. Every `col_*`
   function operates on bytes and never inspects the encoding. Validation is
   the consumer's business; do not add it here.
+
+`col_i64_str` and `col_f64_str` usually parse what `col_readln` returned, so
+they see untrusted text too. Both are total. Any input that is not exactly
+one number gives 0, and neither reads past the terminating NUL.
 
 ### The garbage collector
 

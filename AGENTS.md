@@ -107,3 +107,8 @@ tweaks, docs.
 locally boots a VM on the developer's machine, so propose it and wait for a
 yes rather than starting one. See [`docs/system/build.md`](docs/system/build.md)
 for the procedure once you have it.
+
+**Ask before starting Parallels Desktop or the Windows VM.** Verifying
+Windows locally runs the `Windows 11` VM in Parallels Desktop. If either one
+is not already running, propose starting it and wait for a yes. See
+[`docs/system/build.md`](docs/system/build.md) for the procedure.

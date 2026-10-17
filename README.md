@@ -79,6 +79,18 @@ int main(void) {
 }
 ```
 
+#### Random numbers and sleeping
+
+| Function | Does |
+| --- | --- |
+| `double col_rnd(void)` | Returns a pseudo-random number in [0, 1) |
+| `void col_randomize_i64(int64_t seed)` | Seeds `col_rnd`. The same seed repeats the same sequence |
+| `void col_sleep_i64(int64_t ms)` | Pauses for `ms` milliseconds. Zero or negative returns at once |
+
+`col_rnd` uses xoshiro256**, so a seed gives the same sequence on every
+platform. Without a call to `col_randomize_i64`, the first `col_rnd`
+call seeds the generator from the clock.
+
 ### String Functions
 
 A COL string is an immutable, null-terminated, UTF-8, byte-transparent
@@ -98,9 +110,14 @@ libc's `strlen` and `strcmp` directly.
 | `char *col_concat_str_str(const char *s, const char *t)` | `s` followed by `t` |
 | `char *col_substr_str_i64_i64(const char *s, int64_t start, int64_t length)` | `length` bytes of `s` from byte offset `start` |
 | `int64_t col_indexof_str_str(const char *s, const char *needle)` | Byte offset of the first occurrence, or `-1` |
+| `char *col_strip_str(const char *s)` | `s` without leading and trailing ASCII whitespace |
+| `char *col_repeat_str_i64(const char *s, int64_t n)` | `n` copies of `s`, or `""` when `n` is not positive |
+| `char *col_replace_str_str_str(const char *s, const char *old_str, const char *new_str)` | `s` with every non-overlapping `old_str` replaced by `new_str`. An empty `old_str` changes nothing |
 | `char *col_string_i64(int64_t x)` | `x` as text, e.g. `"-42"` |
 | `char *col_string_f64(double x)` | `x` as text with six decimals, e.g. `"3.140000"` |
 | `char *col_string_bool(bool x)` | `"true"` or `"false"` |
+| `int64_t col_i64_str(const char *s)` | `s` parsed as a base-10 integer, or `0` if it is not one |
+| `double col_f64_str(const char *s)` | `s` parsed as a float, or `0.0` if it is not one |
 | `char *col_readln(void)` | One line from stdin, without the trailing newline |
 | `bool col_eof(void)` | Whether stdin is at end of input |
 
@@ -110,6 +127,11 @@ empty string, and a `length` running past the end is truncated. The
 negative-`start` rule makes the natural composition read correctly —
 when `col_indexof_str_str` finds nothing it returns `-1`, and feeding
 that into `col_substr_str_i64_i64` gives `""`.
+
+`col_i64_str` and `col_f64_str` are strict. Apart from leading and
+trailing whitespace, the whole string must be one number, so `"42abc"`
+and `"1.5"` both give `0` from `col_i64_str`, as does an out-of-range
+value.
 
 `col_eof` peeks one byte and pushes it back, so it never consumes input.
 That is what lets a read loop terminate:

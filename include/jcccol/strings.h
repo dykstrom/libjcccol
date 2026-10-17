@@ -74,6 +74,68 @@ char *col_substr_str_i64_i64(const char *s, int64_t start, int64_t length);
 int64_t col_indexof_str_str(const char *s, const char *needle);
 
 /**
+ * Removes leading and trailing whitespace from s. Whitespace means the six
+ * ASCII bytes space, \t, \n, \v, \f and \r; every other byte, including
+ * UTF-8 bytes, is text. Whitespace inside s is kept.
+ *
+ * @param s The string to strip.
+ * @return A fresh block holding s without surrounding whitespace.
+ */
+char *col_strip_str(const char *s);
+
+/**
+ * Repeats s n times.
+ *
+ * @param s The string to repeat.
+ * @param n How many copies to join. Non-positive yields the empty string.
+ * @return A fresh block holding n copies of s.
+ */
+char *col_repeat_str_i64(const char *s, int64_t n);
+
+/**
+ * Replaces every occurrence of old_str in s with new_str. Occurrences are
+ * found left to right and never overlap, and the inserted text is not
+ * searched again: replacing "aa" with "b" in "aaa" gives "ba".
+ *
+ * An empty old_str matches nothing, so s comes back unchanged. Inserting text
+ * between every byte would split multi-byte UTF-8 characters.
+ *
+ * @param s The string to search.
+ * @param old_str The text to replace.
+ * @param new_str The replacement text. May be empty, which deletes old_str.
+ * @return A fresh block holding the result.
+ */
+char *col_replace_str_str_str(const char *s, const char *old_str, const char *new_str);
+
+/**
+ * Parses a base-10 integer, strictly. Apart from leading and trailing
+ * whitespace (as for col_strip_str), s must hold one integer with an
+ * optional sign and nothing else.
+ *
+ * Returns 0 for anything else, including "", "42abc", "1.5", "0x10" and
+ * a value outside the int64_t range. A returned 0 therefore does not
+ * tell "0" apart from invalid input.
+ *
+ * @param s The text to parse.
+ * @return The parsed value, or 0.
+ */
+int64_t col_i64_str(const char *s);
+
+/**
+ * Parses a floating-point number, strictly. Apart from leading and
+ * trailing whitespace (as for col_strip_str), s must hold one number in
+ * strtod syntax and nothing else, e.g. "3.5", "-2.5e3" or ".5".
+ *
+ * Returns 0.0 for anything else, including "", "3.5x", and a value too
+ * large for a double. Whether "inf", "nan" and hex floats are accepted
+ * follows the platform's C library.
+ *
+ * @param s The text to parse.
+ * @return The parsed value, or 0.0.
+ */
+double col_f64_str(const char *s);
+
+/**
  * Converts an integer to its textual form, matching the formatting the
  * LLVM backend uses for println.
  *

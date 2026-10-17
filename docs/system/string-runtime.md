@@ -19,6 +19,15 @@ There is no codepoint API, and none is planned for v1 — no
 collation. Splitting a multi-byte character with `col_substr_str_i64_i64`
 is possible and is the caller's problem; the terminal does the decoding.
 
+Whitespace means the six ASCII bytes space, `\t`, `\n`, `\v`, `\f` and `\r`.
+The static helper `col_is_space` in `src/strings.c` tests for them.
+`col_strip_str` uses it, and the number parsers use it for trailing
+whitespace. A new function that treats whitespace specially must use
+`col_is_space` too, not `isspace`, whose answer depends on the locale.
+`strtoll` and `strtod` skip leading whitespace with `isspace`. That matches
+the same six bytes only because jcc never calls `setlocale`, so COL programs
+run in the C locale.
+
 ## Strings are never null
 
 Every function returning a string returns a valid pointer to a
