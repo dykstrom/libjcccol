@@ -8,12 +8,16 @@ Six supported platforms, all built and released by CI:
 | macOS x86_64 | `macos-15-intel` | Xcode Clang |
 | Linux x86_64 | `ubuntu-latest` | apt `clang llvm` |
 | Linux arm64 | `ubuntu-24.04-arm` | apt `clang llvm` |
-| Windows x86_64 | `windows-latest` | MSYS2 MINGW64 |
+| Windows x86_64 | `windows-latest` | MSYS2 CLANG64 |
 | Windows arm64 | `windows-11-arm` | MSYS2 CLANGARM64 |
 
 64-bit only; 32-bit is out of scope. There is no explicit minimum OS or libc
 version — the supported baseline is whatever those runner images and current
 MSYS2 packages provide.
+
+Both Windows builds use an MSYS2 Clang environment, so both archives are
+built against the UCRT C runtime, not the older `msvcrt`. A Windows
+program that links `libjcccol.a` must also target UCRT.
 
 The public headers also enforce the 64-bit limit. `include/jcccol/strings.h`
 declares `col_string_i128` with `__int128`, a Clang extension type that only
