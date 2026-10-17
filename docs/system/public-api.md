@@ -5,7 +5,7 @@
 1. Derive the exported symbol name from the scheme in
    [`../ARCHITECTURE.md`](../ARCHITECTURE.md#symbol-naming): `col_` prefix,
    then one lower-case token per parameter type in declaration order
-   (`str`, `i64`, `f64`, `bool`), or no suffix at all if the function takes
+   (`str`, `i64`, `i128`, `f64`, `bool`), or no suffix at all if the function takes
    no arguments. JCC emits calls to this name directly, so getting it right
    is the whole contract.
 2. Add it to the appropriate header under `include/jcccol/`, or create a new

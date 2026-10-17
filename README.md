@@ -114,6 +114,7 @@ libc's `strlen` and `strcmp` directly.
 | `char *col_repeat_str_i64(const char *s, int64_t n)` | `n` copies of `s`, or `""` when `n` is not positive |
 | `char *col_replace_str_str_str(const char *s, const char *old_str, const char *new_str)` | `s` with every non-overlapping `old_str` replaced by `new_str`. An empty `old_str` changes nothing |
 | `char *col_string_i64(int64_t x)` | `x` as text, e.g. `"-42"` |
+| `char *col_string_i128(__int128 x)` | `x` as text, e.g. `"-170141183460469231731687303715884105728"` |
 | `char *col_string_f64(double x)` | `x` as text with six decimals, e.g. `"3.140000"` |
 | `char *col_string_bool(bool x)` | `"true"` or `"false"` |
 | `int64_t col_i64_str(const char *s)` | `s` parsed as a base-10 integer, or `0` if it is not one |

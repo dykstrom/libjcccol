@@ -145,6 +145,19 @@ double col_f64_str(const char *s);
 char *col_string_i64(int64_t x);
 
 /**
+ * Converts a 128-bit integer to its textual form, in the same plain
+ * decimal form as col_string_i64.
+ *
+ * No libc printf conversion specifier exists for a 128-bit integer, so
+ * this function produces the digits itself rather than going through
+ * snprintf.
+ *
+ * @param x The value to convert.
+ * @return A fresh block, e.g. "-170141183460469231731687303715884105728".
+ */
+char *col_string_i128(__int128 x);
+
+/**
  * Converts a float to its textual form, matching the formatting the LLVM
  * backend uses for println: printf's "%f", so six decimals.
  *

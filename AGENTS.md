@@ -17,7 +17,7 @@ linker resolves them at COL link time. Targets macOS, Linux, and Windows
 
 | Piece | Choice |
 |-------|--------|
-| Language | C11 (`-std=c11`), no third-party dependencies |
+| Language | C11 (`-std=c11`) plus the Clang `__int128` type, no third-party dependencies |
 | Compiler | Clang by default on all platforms; `CC`/`AR` overridable |
 | Build | GNU Make. Output is `build/libjcccol.a` |
 | Testing | Custom header-only framework, `tests/test_framework.h`. One binary per `tests/test_*.c` |

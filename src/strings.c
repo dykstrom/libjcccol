@@ -209,6 +209,29 @@ char *col_string_i64(int64_t x) {
     return result;
 }
 
+char *col_string_i128(__int128 x) {
+    /* No printf conversion specifier exists for 128 bits, so the digits
+     * are written by hand, right to left from the end of the buffer.
+     * 41 bytes hold the 39 digits of INT128_MAX, a sign, and a NUL. */
+    char buffer[41];
+    char *p = buffer + sizeof buffer;
+
+    /* Negate through the unsigned type: -x on the signed type would
+     * overflow for INT128_MIN. */
+    unsigned __int128 u = (x < 0) ? -(unsigned __int128) x : (unsigned __int128) x;
+
+    do {
+        *--p = (char) ('0' + (int) (u % 10));
+        u /= 10;
+    } while (u != 0);
+
+    if (x < 0) {
+        *--p = '-';
+    }
+
+    return col_copy(p, (size_t) (buffer + sizeof buffer - p));
+}
+
 char *col_string_f64(double x) {
     /* "%f" matches F64.getFormat() in jcc, which is what println emits:
      * six decimals. */

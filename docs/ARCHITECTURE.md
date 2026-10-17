@@ -14,7 +14,8 @@ It follows the same pattern as the BASIC standard library
 
 The library is:
 
-- Written in portable C (C11 standard).
+- Written in portable C (C11 standard), plus the `__int128` extension type,
+  which limits it to 64-bit targets (see [`system/platforms.md`](system/platforms.md)).
 - Built using the LLVM toolchain (Clang on all platforms).
 - Compiled to a static library (`libjcccol.a`).
 - Cross-platform (macOS, Linux, Windows).
@@ -100,6 +101,7 @@ parameter type token, in declaration order:
 | --- | --- |
 | string | `str` |
 | integer | `i64` |
+| i128 | `i128` |
 | float | `f64` |
 | boolean | `bool` |
 
@@ -125,6 +127,7 @@ Worked examples:
 | `indexof(string, string)` | `col_indexof_str_str` |
 | `indexof(string, string, integer)` | `col_indexof_str_str_i64` |
 | `string(integer)` | `col_string_i64` |
+| `string(i128)` | `col_string_i128` |
 | `string(float)` | `col_string_f64` |
 | `string(boolean)` | `col_string_bool` |
 

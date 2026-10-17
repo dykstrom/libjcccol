@@ -152,6 +152,21 @@ TEST(string_i64) {
     return 0;
 }
 
+/* <stdint.h> has no 128-bit limits. */
+#define TEST_INT128_MAX ((__int128) (((unsigned __int128) 1 << 127) - 1))
+#define TEST_INT128_MIN (-TEST_INT128_MAX - 1)
+
+TEST(string_i128) {
+    ASSERT_STR_EQ(col_string_i128(0), "0");
+    ASSERT_STR_EQ(col_string_i128(42), "42");
+    ASSERT_STR_EQ(col_string_i128(-42), "-42");
+    ASSERT_STR_EQ(col_string_i128(-1), "-1");
+    ASSERT_STR_EQ(col_string_i128((__int128) INT64_MAX + 1), "9223372036854775808");
+    ASSERT_STR_EQ(col_string_i128(TEST_INT128_MAX), "170141183460469231731687303715884105727");
+    ASSERT_STR_EQ(col_string_i128(TEST_INT128_MIN), "-170141183460469231731687303715884105728");
+    return 0;
+}
+
 /* "%f" — six decimals, matching F64.getFormat() in jcc. */
 TEST(string_f64) {
     ASSERT_STR_EQ(col_string_f64(3.14), "3.140000");
@@ -402,6 +417,7 @@ int main(void) {
     RUN_TEST(repeat);
     RUN_TEST(replace);
     RUN_TEST(string_i64);
+    RUN_TEST(string_i128);
     RUN_TEST(string_f64);
     RUN_TEST(string_bool);
     RUN_TEST(i64_str);

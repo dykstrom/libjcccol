@@ -15,6 +15,11 @@ Six supported platforms, all built and released by CI:
 version — the supported baseline is whatever those runner images and current
 MSYS2 packages provide.
 
+The public headers also enforce the 64-bit limit. `include/jcccol/strings.h`
+declares `col_string_i128` with `__int128`, a Clang extension type that only
+64-bit targets support. On a 32-bit target, any file that includes `jcccol.h`
+fails to compile with `__int128 is not supported on this target`.
+
 Platform splits live in the implementation files, never in the public headers:
 `src/core.c` branches on `#ifdef _WIN32` (Win32 API) versus `#else` (POSIX).
 The POSIX branch requires `#define _POSIX_C_SOURCE 200809L` before any system
