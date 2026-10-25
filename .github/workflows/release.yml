@@ -230,21 +230,6 @@ jobs:
           - **macOS x86_64** (Intel)
           - **Linux x86_64**
           - **Linux ARM64**
-
-          ### Installation
-
-          1. Download the appropriate archive for your platform
-          2. Extract the archive
-          3. The package contains:
-             - `lib/libjcccol.a` — Static library
-             - `include/jcccol.h` — Umbrella header
-             - `include/jcccol/` — Per-module headers
-             - `README.md` — Documentation
-             - `LICENSE` — GPL-3.0 license text
-
-          ### Usage
-
-          Link COL programs against `lib/libjcccol.a` and add `include/` to the compiler's include search path. See the [JCC documentation](https://github.com/dykstrom/jcc) for integration instructions.
           EOF
 
           echo "Generated release notes:"
