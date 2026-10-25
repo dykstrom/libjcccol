@@ -14,8 +14,9 @@ each.
 
 ## Still to document
 
-- What MUST a public function do when given invalid input? No function takes
-  arguments yet, so there is no precedent; the second function forces this
-  choice.
+- What MUST a public function do when given invalid input? Several functions
+  take arguments now. [`../system/security.md`](../system/security.md)
+  describes what they do: the integer and parsing paths accept any input,
+  and a NULL string is a compiler bug. No rule states this yet.
 - MUST the `create-release` job's `contents: write` permission stay scoped to
   that job, or is that incidental?

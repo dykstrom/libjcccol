@@ -14,8 +14,8 @@ with the [JCC compiler](https://github.com/dykstrom/jcc).
 with JCC. It is implemented in portable C (C11) and built as a static
 library (`libjcccol.a`) that can be linked with COL programs.
 
-For repo layout, build-system design, release process, and JCC
-integration details, see [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md).
+For the build system, the release process and JCC integration, see
+[`docs/system/`](docs/system/).
 
 ## Platform Support
 
@@ -52,7 +52,7 @@ make help
 Every symbol `libjcccol` exports is prefixed `col_`, and functions that
 COL can overload carry their parameter types in the name (for example
 `col_indexof_str_str`). The full scheme is in
-[`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#symbol-naming). The bundled
+[`docs/system/public-api.md`](docs/system/public-api.md#symbol-naming). The bundled
 garbage collector is the one exception — it keeps its upstream
 `jcc_gc_*` names.
 
@@ -190,7 +190,7 @@ and bundles it under JCC's `bin/`. JCC emits LLVM IR for COL programs
 that references libjcccol symbols by name; the linker resolves them from
 `libjcccol.a` at COL link time.
 
-See [`docs/ARCHITECTURE.md`](docs/ARCHITECTURE.md#relationship-to-jcc)
+See [`docs/system/jcc-integration.md`](docs/system/jcc-integration.md)
 for the full integration picture, including the classifier/archive-type
 table and what JCC actually consumes from the archive.
 

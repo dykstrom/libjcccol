@@ -30,13 +30,13 @@ linker resolves them at COL link time. Targets macOS, Linux, and Windows
 | Path | What's there |
 |------|-------------|
 | `include/jcccol.h` | Umbrella header. A new module header must be added here to be part of the public API |
-| `include/jcccol/` | Per-module public headers (`core.h`, `jcc_gc.h`, `strings.h`). Filenames are snake_case with no prefix; the **symbols** they declare are `col_`-prefixed and signature-mangled — see `docs/ARCHITECTURE.md` |
+| `include/jcccol/` | Per-module public headers (`core.h`, `jcc_gc.h`, `strings.h`). Filenames are snake_case with no prefix; the **symbols** they declare are `col_`-prefixed and signature-mangled — see `docs/system/public-api.md` |
 | `src/` | Implementations, one `.c` per module. Platform splits via `#ifdef _WIN32` |
 | `tests/` | One `test_<module>.c` per module, plus `test_framework.h` |
 | `scripts/` | `release.sh` — bumps `VERSION`, commits, tags. Bash; macOS/Linux only |
 | `.github/workflows/` | `build.yml` (per-platform build + test), `release.yml` (dist bundles, publishes to Releases) |
 | `build/`, `obj/`, `dist/` | Generated. Removed by `make clean` |
-| `docs/` | Durable project context. Sub-folder layout below. `ARCHITECTURE.md` lives here — read it when orienting; it covers layout, build system, release process, JCC integration, and open design decisions. `system/public-api.md` is the checklist for adding a new public function |
+| `docs/` | Durable project context. Sub-folder layout below. In `system/`: `public-api.md` (symbol naming, and the checklist for adding a public function), `build.md`, `release.md`, `jcc-integration.md`, `platforms.md`, `ci.md` |
 
 ```
 docs/
