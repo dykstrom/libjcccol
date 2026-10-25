@@ -1,8 +1,72 @@
-# Local builds and cross-platform verification
+# Build
 
-`make` and `make test` build and test the host platform. For the build system
-itself — targets, flags, dist layout — see
-[`../ARCHITECTURE.md`](../ARCHITECTURE.md).
+The Makefile drives the build, the tests, packaging and releases. `make` and
+`make test` build and test the host platform. The commands are listed in
+[`../../AGENTS.md`](../../AGENTS.md).
+
+## Makefile
+
+- The Makefile uses Clang on every platform. `clang` is the default `CC`.
+- It finds the `.c` files in `src/` and `tests/` by itself, with
+  `$(wildcard ...)`.
+- The compiler flags are `-Wall -Wextra -Werror -std=c11 -O2 -MMD -MP`.
+  Warnings are errors. `-MMD -MP` writes a `.d` dependency file as part of
+  each compile, so dependency tracking always matches the build.
+- Test objects go in `obj/tests/`, so a test file cannot collide with a
+  `src/` object of the same name.
+- Compiling a test (`obj/tests/%.o`) and linking it (`build/%`) are separate
+  rules, so a test can grow to several source files.
+- Test binaries get the suffix in `EXE`: `.exe` on Windows, empty elsewhere.
+  See [`platforms.md`](platforms.md) for how the Makefile detects Windows.
+- Recipes print the full compiler and archiver commands. Only the status
+  lines such as `Compiling: src/core.c` use a silent `@echo`. There is no
+  `V=1` switch for verbose output. A 2026-05 review proposed one, assuming
+  the recipes hid the `clang` command. They do not, so the switch was not
+  added.
+
+### Toolchain overrides
+
+`CC`, `AR` and `RANLIB` can be overridden from the environment or the
+command line, for example `make CC=gcc`. The Makefile uses
+`ifeq ($(origin CC),default)` instead of `?=` for `CC` and `AR`, because make
+predefines both (`cc` and `ar`). A plain `CC ?= clang` would leave `cc` in
+place and build with gcc on Linux.
+
+### Version
+
+`VERSION` at the repo root holds the library version, and the Makefile reads
+it into `$(VERSION)`. The version is used only for archive names and
+`make version`. It is not passed to the compiler, and no C function returns
+it. Add a `-DJCCCOL_VERSION_STRING=...` flag and a C function together when
+a program first needs the version at run time.
+
+### Lint
+
+`make lint` runs [actionlint](https://github.com/rhysd/actionlint) over
+`.github/workflows/` and [shellcheck](https://www.shellcheck.net/) over
+`scripts/*.sh`. Each tool runs only if `command -v` finds it. Otherwise
+`make lint` prints that it skipped the tool and does not fail. `make dist`
+depends on `lint`, so a local `make dist` catches workflow and script errors
+before a release. Install the tools with `brew install actionlint shellcheck`.
+
+### Dist bundles
+
+`make dist PLATFORM=<name> ARCHIVE=tar.gz|zip` stages a bundle in
+`dist/libjcccol-<PLATFORM>/` and creates the archive. The bundle holds
+`lib/`, `include/`, `README.md` and `LICENSE`. The Makefile defines this
+layout in one place, so the workflows do not repeat it.
+
+The default `PLATFORM` maps `uname -s` to `macos`, `linux` or `windows`, so a
+local `make dist` produces the same archive names as CI. The names are listed
+in [`jcc-integration.md`](jcc-integration.md).
+
+## Tests
+
+`tests/test_framework.h` is a small test framework written for this repo. It
+provides the `TEST`, `RUN_TEST`, `ASSERT` and `ASSERT_MSG` macros and a
+`test_sleep_ms` helper. Each `tests/test_<module>.c` builds into its own
+binary, which returns 0 when all its tests pass. `make test` runs every
+binary and stops at the first failure.
 
 ## Verifying Linux from macOS
 

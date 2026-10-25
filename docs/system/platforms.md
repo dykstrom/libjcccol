@@ -15,6 +15,10 @@ Six supported platforms, all built and released by CI:
 version — the supported baseline is whatever those runner images and current
 MSYS2 packages provide.
 
+The primary development platform is macOS arm64. Linux and Windows are
+fully supported, but the release script is bash-only and does not run on
+Windows. See [`release.md`](release.md).
+
 Both Windows builds use an MSYS2 Clang environment, so both archives are
 built against the UCRT C runtime, not the older `msvcrt`. A Windows
 program that links `libjcccol.a` must also target UCRT.
@@ -24,7 +28,8 @@ declares `col_string_i128` with `__int128`, a Clang extension type that only
 64-bit targets support. On a 32-bit target, any file that includes `jcccol.h`
 fails to compile with `__int128 is not supported on this target`.
 
-Platform splits live in the implementation files, never in the public headers:
+Platform splits live in the implementation files, never in the public headers.
+Keep each split small and inside the `.c` file that needs it.
 `src/core.c` branches on `#ifdef _WIN32` (Win32 API) versus `#else` (POSIX).
 The POSIX branch requires `#define _POSIX_C_SOURCE 200809L` before any system
 header, so glibc exposes `clock_gettime`/`CLOCK_REALTIME` under `-std=c11`.
@@ -35,9 +40,6 @@ The Makefile carries two platform adaptations: `EXE := .exe` when `uname -s`
 contains `MINGW` or `OS=Windows_NT` is set, baked into the test-binary pattern
 rule; and `DIST_OS`, which normalizes `uname -s` to `macos`/`linux`/`windows`
 so a local `make dist` produces the same archive names CI does.
-
-See [`../ARCHITECTURE.md`](../ARCHITECTURE.md#platform-handling) for the
-abstraction principle this follows.
 
 ## Still to document
 

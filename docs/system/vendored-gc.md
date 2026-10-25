@@ -37,7 +37,7 @@ else may differ.
 
 The collector keeps its upstream `jcc_gc_*` prefix rather than taking
 libjcccol's `col_` prefix (see
-[`../ARCHITECTURE.md`](../ARCHITECTURE.md#symbol-naming)). JCC's
+[`public-api.md`](public-api.md#symbol-naming)). JCC's
 `RuntimeGcCodeGenerator` emits calls to these names for both BASIC and
 COL, so the names are fixed by the compiler, not by this library.
 

@@ -2,7 +2,7 @@
 
 `.github/workflows/build.yml` builds and tests the platform matrix. For the
 tag-triggered release flow in `release.yml`, see
-[`../ARCHITECTURE.md`](../ARCHITECTURE.md).
+[`release.md`](release.md).
 
 | Event | Builds? |
 |---|---|

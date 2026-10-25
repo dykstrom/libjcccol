@@ -37,8 +37,9 @@ For example: `fix/posix-feature-macro`.
 
 ## Releases
 
-At release time, `dev` is merged into `main` with a normal merge — not a
-squash — so `main` keeps the individual commits from `dev`.
+At release time, `dev` is merged into `main` without squashing, so `main`
+keeps the individual commits from `dev`. If `main` has no commits that
+`dev` lacks, the merge is a fast-forward and needs no merge commit.
 
 Cut the release from `main`:
 

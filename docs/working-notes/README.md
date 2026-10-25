@@ -30,4 +30,4 @@ Then:
 - **Stabilizing** — most questions resolved; author believes the take is right but hasn't promoted it yet.
 - **Promoted** — substance has been lifted into `reference/` (or an ADR). The note is frozen as a record of how the thinking evolved.
 
-Promotion is a deliberate act, never automatic. Don't promote without explicit go-ahead. The full funnel (working note → reference → playbook) is described in [`../README.md`](../README.md).
+Promotion is a deliberate act, never automatic. Don't promote without explicit go-ahead. The full funnel (working note → reference → ADR) is described in [`../README.md`](../README.md).

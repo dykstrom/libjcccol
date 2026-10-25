@@ -83,7 +83,7 @@ endif
 PLATFORM ?= $(DIST_OS)-$(shell uname -m)
 ARCHIVE ?= tar.gz
 # Archives are named libjcccol-<version>-<platform>.<ext> to match the
-# convention JCC's Maven build expects (see docs/ARCHITECTURE.md).
+# convention JCC's Maven build expects (see docs/system/jcc-integration.md).
 DIST_NAME := libjcccol-$(VERSION)-$(PLATFORM)
 DIST_STAGE := $(DIST_DIR)/$(DIST_NAME)
 
