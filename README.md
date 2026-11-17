@@ -84,8 +84,8 @@ int main(void) {
 | Function | Does |
 | --- | --- |
 | `double col_rnd(void)` | Returns a pseudo-random number in [0, 1) |
-| `void col_randomize_i64(int64_t seed)` | Seeds `col_rnd`. The same seed repeats the same sequence |
-| `void col_sleep_i64(int64_t ms)` | Pauses for `ms` milliseconds. Zero or negative returns at once |
+| `int64_t col_randomize_i64(int64_t seed)` | Seeds `col_rnd` and returns the seed. The same seed repeats the same sequence |
+| `int64_t col_sleep_i64(int64_t ms)` | Pauses for `ms` milliseconds and returns the milliseconds actually slept. Zero or negative returns 0 at once |
 
 `col_rnd` uses xoshiro256**, so a seed gives the same sequence on every
 platform. Without a call to `col_randomize_i64`, the first `col_rnd`

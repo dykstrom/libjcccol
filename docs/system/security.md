@@ -24,9 +24,11 @@ move a published tag.
 ## Input surface
 
 `col_millis` and `col_rnd` take no arguments, and `col_randomize_i64` accepts
-any seed. `col_sleep_i64` returns at once for zero or a negative value. On
-Windows it clamps a value above the `DWORD` range to `0xFFFFFFFE` ms, so no
-input reaches `INFINITE`.
+any seed and returns it. `col_sleep_i64` returns 0 at once for zero or a
+negative value. On Windows it clamps a value above the `DWORD` range to
+`0xFFFFFFFE` ms, so no input reaches `INFINITE`. Its return value, the time
+slept, is measured on a monotonic clock, so a change to the system time
+cannot make it negative or huge.
 
 ### The string runtime
 

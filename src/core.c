@@ -3,7 +3,7 @@
  */
 
 /* Request POSIX.1-2008 visibility from glibc so clock_gettime(),
- * CLOCK_REALTIME and nanosleep() are declared in <time.h> under -std=c11.
+ * CLOCK_REALTIME, CLOCK_MONOTONIC and nanosleep() are declared in <time.h> under -std=c11.
  * macOS does not need this (its headers are permissive), but it is
  * harmless there and on MinGW. Must be defined before any system header
  * is included. */
@@ -81,7 +81,7 @@ static uint64_t xoshiro256ss(void) {
     return result;
 }
 
-void col_randomize_i64(int64_t seed) {
+int64_t col_randomize_i64(int64_t seed) {
     /* splitmix64 never yields four zero words, the one state xoshiro
      * cannot leave. */
     uint64_t x = (uint64_t) seed;
@@ -91,6 +91,7 @@ void col_randomize_i64(int64_t seed) {
         rnd_state[i] = splitmix64(&x);
     }
     rnd_seeded = true;
+    return seed;
 }
 
 double col_rnd(void) {
@@ -104,10 +105,41 @@ double col_rnd(void) {
 
 /* ---- Sleeping ---- */
 
-void col_sleep_i64(int64_t ms) {
-    if (ms <= 0) {
-        return;
+/* Nanoseconds on a clock that never jumps. col_millis() reads the wall
+ * clock, which an NTP step or a manual change can move in either
+ * direction, so it cannot time a sleep. Only differences between two
+ * readings mean anything; the starting point is arbitrary. */
+static int64_t monotonic_ns(void) {
+#ifdef _WIN32
+    /* GetTickCount64 only moves every 10-16 ms, too coarse to time a
+     * short sleep. The frequency is fixed at boot, so read it once. */
+    static LARGE_INTEGER frequency;
+    LARGE_INTEGER counter;
+
+    if (frequency.QuadPart == 0) {
+        QueryPerformanceFrequency(&frequency);
     }
+    QueryPerformanceCounter(&counter);
+
+    /* Split into whole seconds and a remainder, so the multiplication
+     * cannot overflow however long the machine has been up. */
+    return (counter.QuadPart / frequency.QuadPart) * 1000000000LL
+         + (counter.QuadPart % frequency.QuadPart) * 1000000000LL / frequency.QuadPart;
+#else
+    struct timespec ts;
+
+    clock_gettime(CLOCK_MONOTONIC, &ts);
+    return (int64_t) ts.tv_sec * 1000000000LL + (int64_t) ts.tv_nsec;
+#endif
+}
+
+int64_t col_sleep_i64(int64_t ms) {
+    int64_t start;
+
+    if (ms <= 0) {
+        return 0;
+    }
+    start = monotonic_ns();
 #ifdef _WIN32
     /* INFINITE (0xFFFFFFFF) would never return, so clamp just below it. */
     Sleep(ms >= 0xFFFFFFFFLL ? 0xFFFFFFFEUL : (DWORD) ms);
@@ -123,4 +155,5 @@ void col_sleep_i64(int64_t ms) {
         request = remaining;
     }
 #endif
+    return (monotonic_ns() - start) / 1000000LL;
 }

@@ -16,6 +16,13 @@ scheme itself is described in [`../system/public-api.md`](../system/public-api.m
   scheme does not encode the return type.
   *Source: [ADR 0001](../adr/0001-col-symbol-naming-scheme.md).*
 
+## Return values
+
+- An exported `col_*` function MUST return a value. It MUST NOT be declared
+  `void`.
+  *Source: COL has no void type, so JCC needs a value for every call
+  expression. See [`../system/public-api.md`](../system/public-api.md#return-values).*
+
 ## Compatibility with JCC
 
 JCC-emitted LLVM IR calls libjcccol functions by symbol name, and JCC does

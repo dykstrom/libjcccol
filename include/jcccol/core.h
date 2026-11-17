@@ -36,15 +36,25 @@ double col_rnd(void);
  * the same sequence of numbers.
  *
  * @param seed Any value, including 0 and negative values.
+ * @return The seed, unchanged, so that a caller can seed and keep the
+ *         value in one expression: val seed := randomize(millis()).
  */
-void col_randomize_i64(int64_t seed);
+int64_t col_randomize_i64(int64_t seed);
 
 /**
  * Pauses the program for the given number of milliseconds.
  *
+ * The return value is measured on a monotonic clock, so a change to the
+ * system time does not affect it. It is about ms and usually a little
+ * more, because the OS wakes the program late rather than early. It is
+ * not guaranteed to be at least ms: Windows can wake a sleeper a fraction
+ * of a timer tick early.
+ *
  * @param ms Milliseconds to sleep. Zero or negative returns at once.
+ * @return Milliseconds the program actually slept, rounded down. 0 when
+ *         ms is zero or negative.
  */
-void col_sleep_i64(int64_t ms);
+int64_t col_sleep_i64(int64_t ms);
 
 #ifdef __cplusplus
 }

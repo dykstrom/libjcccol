@@ -118,6 +118,27 @@ TEST(col_randomize_zero_and_negative) {
     return 0;
 }
 
+/* COL has no void type, so randomize hands its seed back. */
+TEST(col_randomize_returns_seed) {
+    ASSERT(col_randomize_i64(42) == 42);
+    ASSERT(col_randomize_i64(0) == 0);
+    ASSERT(col_randomize_i64(-1) == -1);
+    ASSERT(col_randomize_i64(INT64_MIN) == INT64_MIN);
+    ASSERT(col_randomize_i64(INT64_MAX) == INT64_MAX);
+    return 0;
+}
+
+/* Returning the seed must not change what the seed does. */
+TEST(col_randomize_returned_seed_reseeds) {
+    double first;
+    int64_t seed = col_randomize_i64(12345);
+
+    first = col_rnd();
+    col_randomize_i64(seed);
+    ASSERT_MSG(col_rnd() == first, "the returned seed must repeat the sequence");
+    return 0;
+}
+
 /* ---- Sleeping ---- */
 
 TEST(col_sleep_waits) {
@@ -128,10 +149,31 @@ TEST(col_sleep_waits) {
     return 0;
 }
 
+/* The lower bound is 45, not 50: Windows can wake a sleeper a fraction
+ * of a timer tick early, and the result reports that truthfully. */
+TEST(col_sleep_returns_elapsed_ms) {
+    int64_t slept = col_sleep_i64(50);
+    ASSERT_MSG(slept >= 45 && slept < 1000, "col_sleep_i64(50) should return ~50");
+    return 0;
+}
+
+/* The return value and the wall clock time the same sleep, so they must
+ * agree. The wall-clock span also covers the two col_millis calls, so it
+ * is the larger one, give or take rounding. */
+TEST(col_sleep_return_matches_wall_clock) {
+    int64_t ms1 = col_millis();
+    int64_t slept = col_sleep_i64(30);
+    int64_t diff = col_millis() - ms1;
+    ASSERT_MSG(slept <= diff + 2 && diff - slept < 50,
+               "returned time should match the wall-clock time");
+    return 0;
+}
+
 TEST(col_sleep_non_positive_returns_at_once) {
     int64_t ms1 = col_millis();
-    col_sleep_i64(0);
-    col_sleep_i64(-5);
+    ASSERT(col_sleep_i64(0) == 0);
+    ASSERT(col_sleep_i64(-5) == 0);
+    ASSERT(col_sleep_i64(INT64_MIN) == 0);
     ASSERT_MSG(col_millis() - ms1 < 20, "non-positive sleeps should not wait");
     return 0;
 }
@@ -153,7 +195,11 @@ int main(void) {
     RUN_TEST(col_rnd_seed_42_sequence);
     RUN_TEST(col_randomize_repeats_and_differs);
     RUN_TEST(col_randomize_zero_and_negative);
+    RUN_TEST(col_randomize_returns_seed);
+    RUN_TEST(col_randomize_returned_seed_reseeds);
     RUN_TEST(col_sleep_waits);
+    RUN_TEST(col_sleep_returns_elapsed_ms);
+    RUN_TEST(col_sleep_return_matches_wall_clock);
     RUN_TEST(col_sleep_non_positive_returns_at_once);
 
     printf("\n==============================\n");

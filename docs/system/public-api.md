@@ -64,6 +64,25 @@ lower-case type tokens. In libjccbas, the leading `I64` of
 return type. [ADR 0001](../adr/0001-col-symbol-naming-scheme.md) records
 the decision and the alternatives.
 
+## Return values
+
+COL has no void type, so every function a COL program can call returns a
+value. JCC once had to work around `randomize` and `sleep` returning
+nothing by emitting a `0` after each call. A function that exists for its
+side effect returns the most useful value it has:
+
+| COL signature | Returns |
+| --- | --- |
+| `randomize(integer)` | The seed, so `val seed := randomize(millis())` seeds and keeps the seed in one expression |
+| `sleep(integer)` | The milliseconds actually slept, measured on a monotonic clock. 0 for a zero or negative argument |
+
+`sleep` returns about what was asked for, usually a little more. The value
+is not guaranteed to reach the argument, because Windows can wake a sleeper
+a fraction of a timer tick early.
+
+The vendored `jcc_gc_*` functions are not part of this rule. JCC emits
+calls to them itself; a COL program cannot name them.
+
 ## Other naming conventions
 
 - Header guards use the `JCCCOL_<MODULE>_H` pattern. Vendored files keep
@@ -77,7 +96,8 @@ the decision and the alternatives.
    name directly, so the name is the whole contract.
 2. Add the declaration to the right header under `include/jcccol/`, or
    create a new module header there. Include doc comments. Consider
-   platform differences up front.
+   platform differences up front. The function must return a value; see
+   [Return values](#return-values).
 3. Implement it in `src/`. Use `#ifdef _WIN32` for Windows and POSIX APIs
    for macOS and Linux. See [`platforms.md`](platforms.md).
 4. If you created a new module header, add it to the umbrella header

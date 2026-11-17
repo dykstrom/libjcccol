@@ -33,6 +33,7 @@ Keep each split small and inside the `.c` file that needs it.
 `src/core.c` branches on `#ifdef _WIN32` (Win32 API) versus `#else` (POSIX).
 The POSIX branch requires `#define _POSIX_C_SOURCE 200809L` before any system
 header, so glibc exposes `clock_gettime`/`CLOCK_REALTIME` under `-std=c11`.
+The same macro covers `CLOCK_MONOTONIC` and `nanosleep`.
 macOS headers are permissive and compile without it; Linux is where the
 omission surfaces.
 
